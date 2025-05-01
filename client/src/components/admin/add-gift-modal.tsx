@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { z } from "zod";
@@ -30,9 +30,10 @@ interface AddGiftModalProps {
   onClose: () => void;
   registryId?: number;
   categories: string[];
+  gift?: any; // Regalo a editar (si es una edición)
 }
 
-export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGiftModalProps) {
+export function AddGiftModal({ isOpen, onClose, registryId, categories, gift }: AddGiftModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -50,6 +51,39 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
       imageUrl: "https://via.placeholder.com/400x300?text=Imagen+del+Regalo"
     },
   });
+  
+  // Utilizamos useEffect para cargar los datos del regalo en edición
+  useEffect(() => {
+    if (gift) {
+      // Si estamos en modo edición, cargamos los datos del regalo
+      form.reset({
+        name: gift.name || "",
+        category: gift.category || "",
+        price: gift.price || 0,
+        store: gift.store || "",
+        url: gift.url || "",
+        description: gift.description || "",
+        imageUrl: gift.imageUrl || "https://via.placeholder.com/400x300?text=Imagen+del+Regalo"
+      });
+      
+      // Si hay imagen, mostramos la vista previa
+      if (gift.imageUrl) {
+        setImagePreview(gift.imageUrl);
+      }
+    } else {
+      // Si no estamos en modo edición, reseteamos el formulario
+      form.reset({
+        name: "",
+        category: "",
+        price: 0,
+        store: "",
+        url: "",
+        description: "",
+        imageUrl: "https://via.placeholder.com/400x300?text=Imagen+del+Regalo"
+      });
+      setImagePreview(null);
+    }
+  }, [gift, form]);
   
   // Función para manejar la carga de archivos
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,6 +118,9 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
     try {
       let imageDataUrl = values.imageUrl;
       
+      // Determinar si estamos en modo edición o creación
+      const isEditMode = !!gift;
+      
       // Si hay una imagen cargada, utilizamos FormData
       if (uploadedImage) {
         const formData = new FormData();
@@ -97,8 +134,14 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
         if (values.url) formData.append('url', values.url);
         if (values.description) formData.append('description', values.description);
         
+        // Si estamos en modo edición, añadimos el ID del regalo
+        if (isEditMode) {
+          formData.append('id', gift.id.toString());
+        }
+        
         // Hacemos una petición para subir la imagen
-        const response = await fetch('/api/gifts/upload', {
+        const endpoint = isEditMode ? `/api/gifts/${gift.id}/upload` : '/api/gifts/upload';
+        const response = await fetch(endpoint, {
           method: 'POST',
           body: formData,
         });
@@ -111,18 +154,28 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
         await response.json();
       } else {
         // Si no hay imagen cargada, enviamos los datos como antes
-        await apiRequest("POST", "/api/gifts", {
-          ...values,
-          registryId
-        });
+        if (isEditMode) {
+          await apiRequest("PATCH", `/api/gifts/${gift.id}`, {
+            ...values,
+            registryId
+          });
+        } else {
+          await apiRequest("POST", "/api/gifts", {
+            ...values,
+            registryId
+          });
+        }
       }
       
       // Actualizamos los regalos de la lista
       queryClient.invalidateQueries({ queryKey: [`/api/registry/${registryId}/gifts`] });
       
+      // Mensaje según si es edición o creación
       toast({
-        title: "Regalo añadido con éxito",
-        description: "El regalo ha sido añadido a la lista"
+        title: isEditMode ? "Regalo actualizado con éxito" : "Regalo añadido con éxito",
+        description: isEditMode 
+          ? "El regalo ha sido actualizado correctamente" 
+          : "El regalo ha sido añadido a la lista"
       });
       
       // Limpiamos el estado y cerramos el modal
@@ -131,11 +184,11 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
       form.reset();
       onClose();
     } catch (error) {
-      console.error("Error al añadir el regalo:", error);
+      console.error("Error al procesar el regalo:", error);
       toast({
         variant: "destructive",
-        title: "Error al añadir el regalo",
-        description: "Ha ocurrido un error al añadir el regalo. Por favor, inténtalo de nuevo."
+        title: gift ? "Error al actualizar el regalo" : "Error al añadir el regalo",
+        description: "Ha ocurrido un error. Por favor, inténtalo de nuevo."
       });
     } finally {
       setIsSubmitting(false);
@@ -146,7 +199,9 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-soft-gray-800">Añadir nuevo regalo</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-soft-gray-800">
+            {gift ? "Editar regalo" : "Añadir nuevo regalo"}
+          </DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
