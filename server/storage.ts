@@ -11,7 +11,7 @@ import {
   Activity,
   InsertUser
 } from "@shared/schema";
-import { eq, and, desc, isNull, SQL } from "drizzle-orm";
+import { eq, and, desc, isNull, not, SQL } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "@db";
@@ -72,11 +72,11 @@ export interface IStorage {
   getActivitiesByRegistryId(registryId: number, limit?: number): Promise<Activity[]>;
 
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Usamos any para evitar problemas de tipos
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any; // Usamos any para evitar problemas de tipos
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({
@@ -193,16 +193,29 @@ export class DatabaseStorage implements IStorage {
 
   // Gift methods
   async getGiftsByRegistryId(registryId: number): Promise<Gift[]> {
-    // Usar un enfoque más simple para la consulta
+    // Usar un método más simple sin orderBy personalizado
     try {
-      const giftsData = await db
+      // Primero obtenemos los regalos no reservados (NULL primero)
+      const nonReservedGifts = await db
         .select()
         .from(gifts)
-        .where(eq(gifts.registryId, registryId))
-        .orderBy(gifts.reservedBy)
-        .orderBy(gifts.createdAt, { direction: "desc" });
+        .where(and(
+          eq(gifts.registryId, registryId),
+          isNull(gifts.reservedBy)
+        ));
       
-      return giftsData;
+      // Luego obtenemos los regalos reservados (donde reservedBy NO es NULL)
+      const reservedGifts = await db
+        .select()
+        .from(gifts)
+        .where(and(
+          eq(gifts.registryId, registryId),
+          // Si no es null, entonces tiene un valor no nulo
+          SQL`${gifts.reservedBy} IS NOT NULL`
+        ));
+      
+      // Combinamos ambos arrays
+      return [...nonReservedGifts, ...reservedGifts];
     } catch (error) {
       console.error("Error getting gifts by registry ID:", error);
       // Devolver un array vacío en caso de error
