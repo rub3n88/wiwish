@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Mail } from "lucide-react";
+import { Copy, Mail, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LinkSharingProps {
@@ -46,25 +46,39 @@ export function LinkSharing({ registryId, registrySlug }: LinkSharingProps) {
     const text = encodeURIComponent(`¡Hola! Aquí está el enlace a mi lista de regalos para bebé: ${registryUrl}`);
     window.open(`https://wa.me/?text=${text}`);
   };
+  
+  const openInNewTab = () => {
+    window.open(registryUrl, '_blank');
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4 mb-8">
       <h3 className="font-bold text-soft-gray-800 mb-3">Enlace público de la lista</h3>
       <div className="flex flex-col md:flex-row gap-3">
         <div className="flex-grow">
-          <div className="relative">
-            <input 
-              type="text" 
-              value={registryUrl}
-              readOnly
-              className="w-full px-4 py-2 pr-10 border border-soft-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-baby-blue-500 focus:border-baby-blue-500 bg-soft-gray-50" 
-            />
-            <button 
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-soft-gray-500 hover:text-soft-gray-700"
-              onClick={copyToClipboard}
+          <div className="flex gap-2">
+            <div className="relative flex-grow">
+              <input 
+                type="text" 
+                value={registryUrl}
+                readOnly
+                className="w-full px-4 py-2 pr-10 border border-soft-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-baby-blue-500 focus:border-baby-blue-500 bg-soft-gray-50" 
+              />
+              <button 
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-soft-gray-500 hover:text-soft-gray-700"
+                onClick={copyToClipboard}
+              >
+                <Copy className="h-5 w-5" />
+              </button>
+            </div>
+            <Button
+              variant="outline"
+              className="flex items-center whitespace-nowrap"
+              onClick={openInNewTab}
             >
-              <Copy className="h-5 w-5" />
-            </button>
+              <ExternalLink className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Abrir</span>
+            </Button>
           </div>
         </div>
         <div className="flex gap-2">
