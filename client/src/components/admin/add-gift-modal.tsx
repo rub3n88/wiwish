@@ -19,7 +19,8 @@ const giftFormSchema = z.object({
   store: z.string().optional(),
   url: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
   description: z.string().optional(),
-  imageUrl: z.string().min(10, "La URL de la imagen es obligatoria")
+  imageUrl: z.string().min(10, "La URL de la imagen es obligatoria"),
+  image: z.instanceof(File).optional()
 });
 
 type GiftFormValues = z.infer<typeof giftFormSchema>;
@@ -34,6 +35,8 @@ interface AddGiftModalProps {
 export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGiftModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   
   const form = useForm<GiftFormValues>({
     resolver: zodResolver(giftFormSchema),
@@ -44,9 +47,25 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
       store: "",
       url: "",
       description: "",
-      imageUrl: ""
+      imageUrl: "https://via.placeholder.com/400x300?text=Imagen+del+Regalo"
     },
   });
+  
+  // Función para manejar la carga de archivos
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadedImage(file);
+      
+      // Crear URL para vista previa
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result as string);
+        form.setValue("imageUrl", reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   async function onSubmit(values: GiftFormValues) {
     if (!registryId) return;

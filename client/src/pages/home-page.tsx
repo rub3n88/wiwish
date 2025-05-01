@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { BabyIcon, Gift, Users } from "lucide-react";
 import { Footer } from "@/components/layout/footer";
@@ -18,10 +17,7 @@ export default function HomePage() {
     }
   }, [user, setLocation]);
   
-  // Query all public registries
-  const { data: registries, isLoading, error } = useQuery({
-    queryKey: ["/api/registries/public"],
-  });
+  // Ya no consultamos las listas públicas directamente
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -102,46 +98,28 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Public Registries Section */}
+      {/* Search Registry Section */}
       <section className="py-16 px-4 bg-soft-gray-100">
         <div className="container mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center mb-12 text-soft-gray-800">Listas Públicas</h2>
+          <h2 className="text-3xl font-bold text-center mb-6 text-soft-gray-800">Buscar Lista de Regalos</h2>
+          <p className="text-center text-soft-gray-600 mb-10 max-w-2xl mx-auto">
+            ¿Has recibido un enlace a una lista de regalos? Puedes acceder directamente
+            a ella visitando el enlace que te han compartido.
+          </p>
           
-          {isLoading ? (
-            <div className="flex justify-center">
-              <div className="loader"></div>
-            </div>
-          ) : error ? (
-            <div className="text-center text-red-500">
-              Error al cargar las listas públicas
-            </div>
-          ) : registries && registries.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {registries.map((registry: any) => (
-                <Card key={registry.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-2 text-soft-gray-800">
-                      Lista de {registry.babyName}
-                    </h3>
-                    <p className="text-soft-gray-600 mb-4 line-clamp-2">
-                      {registry.description || `Lista de regalos para ${registry.babyName}`}
-                    </p>
-                    <Button
-                      variant="baby-blue"
-                      className="w-full"
-                      asChild
-                    >
-                      <Link href={`/registry/${registry.slug}`}>Ver lista</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center text-soft-gray-600">
-              No hay listas públicas disponibles en este momento
-            </div>
-          )}
+          <div className="bg-white p-8 rounded-lg shadow-sm max-w-md mx-auto text-center">
+            <h3 className="text-xl font-semibold mb-4 text-soft-gray-800">Información de Privacidad</h3>
+            <p className="text-soft-gray-600 mb-6">
+              Las listas de regalos son privadas y solo pueden ser vistas por las personas que tienen el enlace directo.
+            </p>
+            <Button
+              variant="baby-blue"
+              className="mx-auto"
+              asChild
+            >
+              <Link href="/auth">Crear mi lista de regalos</Link>
+            </Button>
+          </div>
         </div>
       </section>
 

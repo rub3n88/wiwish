@@ -98,6 +98,7 @@ export default function AdminDashboard() {
       });
       
       setActiveRegistryId(newRegistry.id);
+      form.reset();
       setCreateRegistryModalOpen(false);
     } catch (error) {
       toast({
