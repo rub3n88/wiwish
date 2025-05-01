@@ -19,7 +19,7 @@ const giftFormSchema = z.object({
   store: z.string().optional(),
   url: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
   description: z.string().optional(),
-  imageUrl: z.string().min(10, "La URL de la imagen es obligatoria"),
+  imageUrl: z.string(), // No validamos longitud al inicio para evitar errores al abrir el modal
   image: z.instanceof(File).optional()
 });
 
@@ -69,6 +69,16 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
 
   async function onSubmit(values: GiftFormValues) {
     if (!registryId) return;
+    
+    // Validar que la URL de la imagen tiene una longitud mínima
+    if (!uploadedImage && values.imageUrl.length < 10) {
+      toast({
+        variant: "destructive",
+        title: "Error de validación",
+        description: "La URL de la imagen es obligatoria y debe tener al menos 10 caracteres"
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     try {
@@ -134,7 +144,7 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-soft-gray-800">Añadir nuevo regalo</DialogTitle>
         </DialogHeader>
@@ -286,20 +296,30 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
                 <div className="md:col-span-2">
                   <p className="text-sm text-soft-gray-600 mb-2">Vista previa:</p>
                   <div className="border rounded-md p-2 max-w-xs">
-                    <img 
-                      src={imagePreview || form.watch("imageUrl")} 
-                      alt="Vista previa" 
-                      className="h-32 w-full object-cover rounded"
-                      onError={() => {
-                        if (!imagePreview) {
-                          toast({
-                            variant: "destructive",
-                            title: "Error de imagen",
-                            description: "La URL de la imagen no es válida o no está disponible"
-                          });
-                        }
-                      }}
-                    />
+                    {/* Solo mostramos la imagen si hay un preview o si la URL no es la predeterminada */}
+                    {(imagePreview || 
+                     (form.watch("imageUrl") !== "https://via.placeholder.com/400x300?text=Imagen+del+Regalo")) ? (
+                      <img 
+                        src={imagePreview || form.watch("imageUrl")} 
+                        alt="Vista previa" 
+                        className="h-32 w-full object-cover rounded"
+                        onError={() => {
+                          if (!imagePreview) {
+                            toast({
+                              variant: "destructive",
+                              title: "Error de imagen",
+                              description: "La URL de la imagen no es válida o no está disponible"
+                            });
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="h-32 w-full flex items-center justify-center bg-soft-gray-100 rounded">
+                        <p className="text-xs text-soft-gray-500 text-center px-2">
+                          Sube una imagen o introduce una URL válida para ver la vista previa
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
