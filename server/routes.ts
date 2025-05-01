@@ -430,7 +430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Ruta para subir imágenes de regalos
+  // Ruta para subir imágenes de regalos (CREACIÓN)
   app.post("/api/gifts/upload", upload.single('image'), async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -475,6 +475,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(201).json(gift);
     } catch (error) {
       console.error("Error uploading image:", error);
+      return res.status(400).json(generateErrorResponse(error));
+    }
+  });
+  
+  // Ruta para subir imágenes de regalos (EDICIÓN)
+  app.post("/api/gifts/:id/upload", upload.single('image'), async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No se ha proporcionado ninguna imagen" });
+      }
+      
+      const { id } = req.params;
+      const giftId = parseInt(id);
+      
+      // Obtener el regalo existente
+      const existingGift = await storage.getGiftById(giftId);
+      if (!existingGift) {
+        return res.status(404).json({ message: "Regalo no encontrado" });
+      }
+      
+      // Verificar que el regalo pertenece a una lista del usuario autenticado
+      const registry = await storage.getRegistryById(existingGift.registryId);
+      if (!registry || registry.userId !== req.user.id) {
+        return res.status(403).json({ message: "No tienes permiso para modificar este regalo" });
+      }
+      
+      // Extraer los datos del formulario
+      const schema = z.object({
+        name: z.string().min(2, "El nombre del regalo es obligatorio"),
+        description: z.string().default(""),
+        price: z.coerce.number().min(0, "El precio debe ser un número positivo"),
+        url: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
+        store: z.string().default(""),
+        category: z.string().min(1, "La categoría es obligatoria"),
+        registryId: z.coerce.number().int("El ID de la lista de regalos es obligatorio"),
+      });
+      
+      const validatedData = schema.parse(req.body);
+      
+      // Crear la URL de la imagen (accesible desde la web)
+      const imageUrl = `/uploads/${req.file.filename}`;
+      
+      // Actualizar el regalo con los nuevos datos y la nueva imagen
+      const updatedGift = await storage.updateGift(giftId, {
+        name: validatedData.name,
+        description: validatedData.description || "",
+        price: validatedData.price,
+        url: validatedData.url || "",
+        store: validatedData.store || "",
+        category: validatedData.category,
+        imageUrl: imageUrl,
+      });
+      
+      return res.json(updatedGift);
+    } catch (error) {
+      console.error("Error updating gift with image:", error);
       return res.status(400).json(generateErrorResponse(error));
     }
   });

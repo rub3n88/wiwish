@@ -211,7 +211,7 @@ export class DatabaseStorage implements IStorage {
         .where(and(
           eq(gifts.registryId, registryId),
           // Si no es null, entonces tiene un valor no nulo
-          SQL`${gifts.reservedBy} IS NOT NULL`
+          isNotNull(gifts.reservedBy)
         ));
       
       // Combinamos ambos arrays
