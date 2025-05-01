@@ -72,11 +72,42 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
     
     setIsSubmitting(true);
     try {
-      await apiRequest("POST", "/api/gifts", {
-        ...values,
-        registryId
-      });
+      let imageDataUrl = values.imageUrl;
       
+      // Si hay una imagen cargada, utilizamos FormData
+      if (uploadedImage) {
+        const formData = new FormData();
+        formData.append('image', uploadedImage);
+        formData.append('name', values.name);
+        formData.append('category', values.category);
+        formData.append('price', values.price.toString());
+        formData.append('registryId', registryId.toString());
+        
+        if (values.store) formData.append('store', values.store);
+        if (values.url) formData.append('url', values.url);
+        if (values.description) formData.append('description', values.description);
+        
+        // Hacemos una petición para subir la imagen
+        const response = await fetch('/api/gifts/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (!response.ok) {
+          throw new Error('Error al subir la imagen');
+        }
+        
+        // La respuesta del servidor contiene los datos del regalo ya actualizado
+        await response.json();
+      } else {
+        // Si no hay imagen cargada, enviamos los datos como antes
+        await apiRequest("POST", "/api/gifts", {
+          ...values,
+          registryId
+        });
+      }
+      
+      // Actualizamos los regalos de la lista
       queryClient.invalidateQueries({ queryKey: [`/api/registry/${registryId}/gifts`] });
       
       toast({
@@ -84,9 +115,13 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
         description: "El regalo ha sido añadido a la lista"
       });
       
+      // Limpiamos el estado y cerramos el modal
+      setImagePreview(null);
+      setUploadedImage(null);
       form.reset();
       onClose();
     } catch (error) {
+      console.error("Error al añadir el regalo:", error);
       toast({
         variant: "destructive",
         title: "Error al añadir el regalo",
@@ -213,12 +248,35 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
                 name="imageUrl"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
-                    <FormLabel className="text-soft-gray-700 font-medium">URL de la imagen *</FormLabel>
+                    <FormLabel className="text-soft-gray-700 font-medium">Imagen del regalo *</FormLabel>
+                    <div className="md:col-span-2 mb-4">
+                      <div className="border-2 border-dashed border-soft-gray-300 rounded-lg p-6 text-center hover:border-baby-blue-500 transition-colors cursor-pointer">
+                        <label htmlFor="image-upload" className="cursor-pointer w-full h-full block">
+                          <div className="flex flex-col items-center">
+                            <CloudUpload className="h-10 w-10 text-soft-gray-400 mb-2" />
+                            <p className="text-soft-gray-600 mb-1">Subir imagen</p>
+                            <p className="text-xs text-soft-gray-500">Arrastra una imagen o haz clic para seleccionar</p>
+                          </div>
+                          <input 
+                            id="image-upload" 
+                            type="file" 
+                            className="hidden" 
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                          />
+                        </label>
+                      </div>
+                    </div>
                     <FormControl>
                       <div className="flex">
-                        <Input {...field} placeholder="https://ejemplo.com/imagen.jpg" />
+                        <Input 
+                          {...field} 
+                          placeholder="https://ejemplo.com/imagen.jpg"
+                          className="text-xs text-soft-gray-500"
+                        />
                       </div>
                     </FormControl>
+                    <p className="text-sm text-soft-gray-500 mt-1">Puedes subir una imagen o usar una URL</p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -229,15 +287,17 @@ export function AddGiftModal({ isOpen, onClose, registryId, categories }: AddGif
                   <p className="text-sm text-soft-gray-600 mb-2">Vista previa:</p>
                   <div className="border rounded-md p-2 max-w-xs">
                     <img 
-                      src={form.watch("imageUrl")} 
+                      src={imagePreview || form.watch("imageUrl")} 
                       alt="Vista previa" 
                       className="h-32 w-full object-cover rounded"
                       onError={() => {
-                        toast({
-                          variant: "destructive",
-                          title: "Error de imagen",
-                          description: "La URL de la imagen no es válida o no está disponible"
-                        });
+                        if (!imagePreview) {
+                          toast({
+                            variant: "destructive",
+                            title: "Error de imagen",
+                            description: "La URL de la imagen no es válida o no está disponible"
+                          });
+                        }
                       }}
                     />
                   </div>

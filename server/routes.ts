@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import express, { type Express, type Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
@@ -7,6 +7,30 @@ import { z } from "zod";
 import { db } from "../db";
 import { gifts } from "../shared/schema";
 import { eq } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+// Configurar multer para almacenar los archivos
+const uploadDir = path.join(process.cwd(), "public", "uploads");
+
+// Asegurarnos de que existe el directorio de uploads
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage_config = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({ storage: storage_config });
 
 // Util functions
 const generateErrorResponse = (error: unknown) => {
@@ -22,6 +46,9 @@ const generateErrorResponse = (error: unknown) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Servir archivos estáticos desde la carpeta uploads
+  app.use('/uploads', express.static(uploadDir));
+  
   // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
 
@@ -400,6 +427,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching activities:", error);
       return res.status(500).json(generateErrorResponse(error));
+    }
+  });
+  
+  // Ruta para subir imágenes de regalos
+  app.post("/api/gifts/upload", upload.single('image'), async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No se ha proporcionado ninguna imagen" });
+      }
+      
+      // Extraer los datos del formulario
+      const schema = z.object({
+        name: z.string().min(2, "El nombre del regalo es obligatorio"),
+        description: z.string().default(""),
+        price: z.coerce.number().min(0, "El precio debe ser un número positivo"),
+        url: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
+        store: z.string().default(""),
+        category: z.string().min(1, "La categoría es obligatoria"),
+        registryId: z.coerce.number().int("El ID de la lista de regalos es obligatorio"),
+      });
+      
+      const validatedData = schema.parse(req.body);
+      
+      // Verificar que la lista de regalos pertenece al usuario autenticado
+      const registry = await storage.getRegistryById(validatedData.registryId);
+      if (!registry || registry.userId !== req.user.id) {
+        return res.status(403).json({ message: "No tienes permiso para añadir regalos a esta lista" });
+      }
+      
+      // Crear la URL de la imagen (accesible desde la web)
+      const imageUrl = `/uploads/${req.file.filename}`;
+      
+      // Crear el regalo con la URL de la imagen
+      const gift = await storage.createGift({
+        ...validatedData,
+        description: validatedData.description || "",
+        url: validatedData.url || "",
+        store: validatedData.store || "",
+        imageUrl: imageUrl,
+      });
+      
+      return res.status(201).json(gift);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return res.status(400).json(generateErrorResponse(error));
     }
   });
 
