@@ -18,10 +18,10 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        "baby-blue": "bg-baby-blue-500 text-white hover:bg-baby-blue-600",
-        "baby-pink": "bg-baby-pink-500 text-white hover:bg-baby-pink-600",
+        "baby-blue": "bg-baby-blue-600 text-white hover:bg-baby-blue-700 border border-baby-blue-700",
+        "baby-pink": "bg-baby-pink-600 text-white hover:bg-baby-pink-700 border border-baby-pink-700",
         filter: "bg-white text-soft-gray-700 border border-soft-gray-300 hover:bg-soft-gray-100",
-        "filter-active": "bg-baby-blue-500 text-white",
+        "filter-active": "bg-baby-blue-600 text-white border border-baby-blue-700",
         whatsapp: "bg-[#25D366] text-white hover:bg-opacity-90",
       },
       size: {
