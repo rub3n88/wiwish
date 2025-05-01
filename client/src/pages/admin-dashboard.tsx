@@ -63,12 +63,30 @@ export default function AdminDashboard() {
   const { data: gifts, isLoading: giftsLoading } = useQuery({
     queryKey: [`/api/registry/${activeRegistryId}/gifts`],
     enabled: !!activeRegistryId,
+    // Asegurar que siempre devuelva un array
+    select: (data) => {
+      // Si no hay datos o no es un array, devolver un array vacío
+      if (!data || !Array.isArray(data)) {
+        console.warn('Gift data is not an array:', data);
+        return [];
+      }
+      return data;
+    }
   });
   
   // Get registry activities
   const { data: activities, isLoading: activitiesLoading } = useQuery({
     queryKey: [`/api/registry/${activeRegistryId}/activities`],
     enabled: !!activeRegistryId,
+    // Asegurar que siempre devuelva un array
+    select: (data) => {
+      // Si no hay datos o no es un array, devolver un array vacío
+      if (!data || !Array.isArray(data)) {
+        console.warn('Activity data is not an array:', data);
+        return [];
+      }
+      return data;
+    }
   });
   
   // Get active registry data

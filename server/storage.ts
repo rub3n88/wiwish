@@ -159,25 +159,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRegistryVisitCount(id: number): Promise<void> {
+    // Primero obtenemos el registro actual para obtener el conteo actual
+    const registry = await this.getRegistryById(id);
+    if (!registry) return;
+    
+    // Incrementamos manualmente el contador
+    const newCount = (registry.visitorCount || 0) + 1;
+    
     await db
       .update(registries)
       .set({ 
-        visitorCount: db.sql`${registries.visitorCount} + 1`,
+        visitorCount: newCount,
         updatedAt: new Date()
       })
       .where(eq(registries.id, id));
     
     // Create activity for visit
-    const registry = await this.getRegistryById(id);
-    if (registry) {
-      await this.createActivity({
-        registryId: id,
-        type: "REGISTRY_VIEWED",
-        userDisplayName: "Visitantes",
-        targetName: "la lista",
-        description: "Alguien ha visitado la lista de regalos"
-      });
-    }
+    await this.createActivity({
+      registryId: id,
+      type: "REGISTRY_VIEWED",
+      userDisplayName: "Visitantes",
+      targetName: "la lista",
+      description: "Alguien ha visitado la lista de regalos"
+    });
   }
 
   async getPublicRegistries(): Promise<Registry[]> {
@@ -189,16 +193,21 @@ export class DatabaseStorage implements IStorage {
 
   // Gift methods
   async getGiftsByRegistryId(registryId: number): Promise<Gift[]> {
-    const giftsData = await db.query.gifts.findMany({
-      where: eq(gifts.registryId, registryId),
-      orderBy: [
-        // Show unreserved gifts first, then by creation date (newest first)
-        { column: gifts.reservedBy, order: "asc" },
-        { column: gifts.createdAt, order: "desc" }
-      ]
-    });
-
-    return giftsData;
+    // Usar un enfoque más simple para la consulta
+    try {
+      const giftsData = await db
+        .select()
+        .from(gifts)
+        .where(eq(gifts.registryId, registryId))
+        .orderBy(gifts.reservedBy)
+        .orderBy(gifts.createdAt, { direction: "desc" });
+      
+      return giftsData;
+    } catch (error) {
+      console.error("Error getting gifts by registry ID:", error);
+      // Devolver un array vacío en caso de error
+      return [];
+    }
   }
 
   async getGiftById(id: number): Promise<Gift | undefined> {
