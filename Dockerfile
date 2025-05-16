@@ -27,9 +27,12 @@ WORKDIR /app
 
 ENV NODE_ENV production
 
-# Copiar archivos de manifiesto de paquetes e instalar solo dependencias de producción
+# Copiar archivos de manifiesto de paquetes
 COPY --from=builder /app/package.json /app/package-lock.json* ./
-RUN npm ci --omit=dev
+
+# Instalar dependencias de producción Y TAMBIÉN drizzle-kit específicamente
+# ya que es necesario para las migraciones en el entrypoint.
+RUN npm ci --omit=dev && npm install drizzle-kit
 
 # Copiar la aplicación construida desde la etapa de construcción
 # Esto asume que 'npm run build' crea una carpeta 'dist' 
