@@ -34,6 +34,11 @@ COPY --from=builder /app/package.json /app/package-lock.json* ./
 # ya que es necesario para las migraciones en el entrypoint.
 RUN npm ci --omit=dev && npm install drizzle-kit
 
+# Copiar la configuración de Drizzle necesaria para las migraciones
+COPY --from=builder /app/drizzle.config.ts ./
+# Si Drizzle necesita tsconfig.json en tiempo de ejecución (generalmente no para push), también lo copiarías:
+# COPY --from=builder /app/tsconfig.json ./
+
 # Copiar la aplicación construida desde la etapa de construcción
 # Esto asume que 'npm run build' crea una carpeta 'dist' 
 # con el servidor compilado y los activos del cliente.
