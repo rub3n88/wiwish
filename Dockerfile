@@ -25,7 +25,9 @@ LABEL description="Imagen de producción para la aplicación Wiwish"
 
 WORKDIR /app
 
-ENV NODE_ENV production
+# Las variables de entorno se configuran en Dokploy y se pasan al contenedor
+# ENV NODE_ENV production
+# No fijamos variables aquí para que Dokploy pueda inyectarlas
 
 # Copiar archivos de manifiesto de paquetes
 COPY --from=builder /app/package.json /app/package-lock.json* ./
