@@ -13,9 +13,15 @@ RUN npm ci
 # Copiar el resto del código de la aplicación
 COPY . .
 
+# Corregir importaciones para ESM antes de compilar
+RUN find ./server -name "*.ts" -exec sed -i 's/from "\.\([^"]*\)";/from ".\1.js";/g' {} \;
+
 # Construir la aplicación (backend y frontend)
 # Esto ejecuta "tsc && vite build" según tu package.json
 RUN npm run build
+
+# Verificar que los archivos existan
+RUN ls -la dist/server/
 
 # Etapa 2: Producción
 FROM node:20-alpine
