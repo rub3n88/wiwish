@@ -30,14 +30,15 @@ ENV NODE_ENV production
 # Copiar archivos de manifiesto de paquetes
 COPY --from=builder /app/package.json /app/package-lock.json* ./
 
-# Instalar dependencias de producción Y TAMBIÉN drizzle-kit específicamente
-# ya que es necesario para las migraciones en el entrypoint.
-RUN npm ci --omit=dev && npm install drizzle-kit
+# Instalar dependencias de producción
+# IMPORTANTE: Instalar las mismas dependencias que en desarrollo para asegurar compatibilidad
+# de drizzle-kit con drizzle.config.ts
+RUN npm ci
 
 # Copiar la configuración de Drizzle necesaria para las migraciones
 COPY --from=builder /app/drizzle.config.ts ./
-# Si Drizzle necesita tsconfig.json en tiempo de ejecución (generalmente no para push), también lo copiarías:
-# COPY --from=builder /app/tsconfig.json ./
+COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/db ./db
 
 # Copiar la aplicación construida desde la etapa de construcción
 # Esto asume que 'npm run build' crea una carpeta 'dist' 
