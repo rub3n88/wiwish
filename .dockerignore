@@ -1,0 +1,44 @@
+# Ignorar dependencias de Node, ya que se instalan dentro del contenedor
+node_modules
+
+# Ignorar artefactos de compilación locales (la compilación se hace en el contenedor)
+# dist
+# Si tienes una carpeta 'dist' local que no quieres que afecte la caché de capas,
+# puedes descomentar la línea de arriba, pero generalmente no es necesario
+# ya que la compilación en el contenedor la sobrescribirá.
+
+# Ignorar archivos de log
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Ignorar archivos de entorno (estos deben manejarse de forma segura)
+.env
+.env.*
+!.env.example
+!.env.production.example # Si tienes ejemplos que sí quieres incluir
+
+# Ignorar archivos específicos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Ignorar configuraciones de IDE y herramientas
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Ignorar archivos de Git
+.git
+.gitignore
+.gitattributes
+
+# Ignorar archivos de Docker (no necesitan estar en el contexto de la imagen)
+Dockerfile
+docker-compose.yml
+.dockerignore 

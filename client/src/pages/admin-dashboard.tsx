@@ -7,11 +7,11 @@ import { GiftTable } from "@/components/admin/gift-table";
 import { ActivityFeed } from "@/components/admin/activity-feed";
 import { AddGiftModal } from "@/components/admin/add-gift-modal";
 import { useQuery } from "@tanstack/react-query";
-import { Gift } from "@/types";
+import { Gift, Activity } from "@/types";
 import { Loader2, Plus } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -24,7 +24,26 @@ import { Label } from "@/components/ui/label";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+
+// Definición del tipo Registry si no existe uno global adecuado
+// Si tienes un tipo Registry global en @/types, impórtalo en su lugar.
+interface Registry {
+  id: number;
+  babyName: string;
+  description?: string;
+  isPublic?: boolean;
+  slug?: string;
+  visitorCount?: number;
+  // Añade cualquier otra propiedad que tus registros puedan tener
+}
 
 const registrySchema = z.object({
   babyName: z.string().min(2, "El nombre del bebé es obligatorio"),
@@ -39,59 +58,74 @@ export default function AdminDashboard() {
   const [addGiftModalOpen, setAddGiftModalOpen] = useState(false);
   const [createRegistryModalOpen, setCreateRegistryModalOpen] = useState(false);
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
-  
+
   // Get user's registries
-  const { data: registries, isLoading: registriesLoading } = useQuery({
+  const { data: registries, isLoading: registriesLoading } = useQuery<
+    Registry[]
+  >({
     queryKey: ["/api/registries"],
+    select: (data: unknown) => {
+      if (Array.isArray(data)) {
+        return data as Registry[];
+      }
+      return [];
+    },
   });
-  
+
   // Get default/active registry
   const [activeRegistryId, setActiveRegistryId] = useState<number | null>(null);
-  
+
   useEffect(() => {
-    if (registries && registries.length > 0 && !activeRegistryId) {
+    if (
+      registries &&
+      Array.isArray(registries) &&
+      registries.length > 0 &&
+      !activeRegistryId
+    ) {
       setActiveRegistryId(registries[0].id);
     }
-    
-    // If no registries, show the create registry modal
-    if (registries && registries.length === 0) {
+
+    if (
+      !registriesLoading &&
+      registries &&
+      Array.isArray(registries) &&
+      registries.length === 0
+    ) {
       setCreateRegistryModalOpen(true);
     }
-  }, [registries, activeRegistryId]);
-  
+  }, [registries, activeRegistryId, registriesLoading]);
+
   // Get registry gifts
-  const { data: gifts, isLoading: giftsLoading } = useQuery({
+  const { data: gifts, isLoading: giftsLoading } = useQuery<Gift[]>({
     queryKey: [`/api/registry/${activeRegistryId}/gifts`],
     enabled: !!activeRegistryId,
-    // Asegurar que siempre devuelva un array
-    select: (data) => {
-      // Si no hay datos o no es un array, devolver un array vacío
+    select: (data: unknown) => {
       if (!data || !Array.isArray(data)) {
-        console.warn('Gift data is not an array:', data);
         return [];
       }
-      return data;
-    }
+      return data as Gift[];
+    },
   });
-  
+
   // Get registry activities
-  const { data: activities, isLoading: activitiesLoading } = useQuery({
+  const { data: activities, isLoading: activitiesLoading } = useQuery<
+    Activity[]
+  >({
     queryKey: [`/api/registry/${activeRegistryId}/activities`],
     enabled: !!activeRegistryId,
-    // Asegurar que siempre devuelva un array
-    select: (data) => {
-      // Si no hay datos o no es un array, devolver un array vacío
+    select: (data: unknown) => {
       if (!data || !Array.isArray(data)) {
-        console.warn('Activity data is not an array:', data);
         return [];
       }
-      return data;
-    }
+      return data as Activity[];
+    },
   });
-  
+
   // Get active registry data
-  const activeRegistry = registries?.find((registry: any) => registry.id === activeRegistryId);
-  
+  const activeRegistry: Registry | undefined = registries?.find(
+    (registry: Registry) => registry.id === activeRegistryId
+  );
+
   // Form for creating registry
   const form = useForm<RegistryFormValues>({
     resolver: zodResolver(registrySchema),
@@ -101,20 +135,20 @@ export default function AdminDashboard() {
       isPublic: true,
     },
   });
-  
+
   // Create registry handler
   const handleCreateRegistry = async (values: RegistryFormValues) => {
     try {
       const res = await apiRequest("POST", "/api/registries", values);
       const newRegistry = await res.json();
-      
+
       queryClient.invalidateQueries({ queryKey: ["/api/registries"] });
-      
+
       toast({
         title: "Lista creada con éxito",
         description: `La lista de regalos para ${values.babyName} ha sido creada`,
       });
-      
+
       setActiveRegistryId(newRegistry.id);
       form.reset();
       setCreateRegistryModalOpen(false);
@@ -126,16 +160,16 @@ export default function AdminDashboard() {
       });
     }
   };
-  
+
   // Handle gift edit
   const handleGiftEdit = (gift: Gift) => {
     setSelectedGift(gift);
     setAddGiftModalOpen(true);
   };
-  
+
   // Get unique categories from gifts
-  const categories = gifts 
-    ? [...new Set(gifts.map((gift: Gift) => gift.category))]
+  const categories: string[] = gifts
+    ? [...new Set(gifts.map((gift: Gift) => String(gift.category)))]
     : [];
 
   if (registriesLoading) {
@@ -148,10 +182,8 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-soft-gray-100">
-      {activeRegistry && (
-        <AdminHeader registryName={activeRegistry.babyName} />
-      )}
-      
+      {activeRegistry && <AdminHeader registryName={activeRegistry.babyName} />}
+
       <main className="container mx-auto px-4 py-6">
         {/* Dashboard Overview */}
         {activeRegistry && (
@@ -160,16 +192,18 @@ export default function AdminDashboard() {
               gifts={gifts || []}
               visitors={activeRegistry.visitorCount || 0}
             />
-            
+
             <LinkSharing
               registryId={activeRegistry.id}
-              registrySlug={activeRegistry.slug}
+              registrySlug={activeRegistry.slug || ""}
             />
-            
+
             {/* Gift Management */}
             <div className="mb-8">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-soft-gray-800">Gestión de Regalos</h2>
+                <h2 className="text-xl font-bold text-soft-gray-800">
+                  Gestión de Regalos
+                </h2>
                 <Button
                   variant="baby-blue"
                   className="flex items-center"
@@ -182,51 +216,57 @@ export default function AdminDashboard() {
                   Añadir regalo
                 </Button>
               </div>
-              
+
               {giftsLoading ? (
                 <div className="bg-white rounded-lg shadow-sm p-10 flex justify-center">
                   <Loader2 className="h-6 w-6 animate-spin text-baby-blue-500" />
                 </div>
               ) : (
-                <GiftTable
-                  gifts={gifts || []}
-                  onEdit={handleGiftEdit}
-                />
+                <GiftTable gifts={gifts || []} onEdit={handleGiftEdit} />
               )}
             </div>
-            
+
             {/* Recent Activity */}
-            <ActivityFeed
-              activities={activities || []}
-            />
+            <ActivityFeed activities={activities || []} />
           </>
         )}
       </main>
-      
+
       {/* Add Gift Modal */}
       <AddGiftModal
         isOpen={addGiftModalOpen}
         onClose={() => {
           setAddGiftModalOpen(false);
-          setSelectedGift(null); // Limpiar el regalo seleccionado al cerrar
+          setSelectedGift(null);
         }}
         registryId={activeRegistryId || undefined}
-        categories={categories.length > 0 ? categories : ["Ropa", "Juguetes", "Accesorios", "Muebles", "Otros"]}
-        gift={selectedGift} // Pasamos el regalo seleccionado para edición
+        categories={
+          categories.length > 0
+            ? categories
+            : ["Ropa", "Juguetes", "Accesorios", "Muebles", "Otros"]
+        }
+        gift={selectedGift}
       />
-      
+
       {/* Create Registry Modal */}
-      <Dialog open={createRegistryModalOpen} onOpenChange={setCreateRegistryModalOpen}>
+      <Dialog
+        open={createRegistryModalOpen}
+        onOpenChange={setCreateRegistryModalOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Crear una lista de regalos</DialogTitle>
             <DialogDescription>
-              Crea una lista de regalos para tu bebé. Podrás compartirla con amigos y familiares.
+              Crea una lista de regalos para tu bebé. Podrás compartirla con
+              amigos y familiares.
             </DialogDescription>
           </DialogHeader>
-          
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleCreateRegistry)} className="space-y-4">
+            <form
+              onSubmit={form.handleSubmit(handleCreateRegistry)}
+              className="space-y-4"
+            >
               <FormField
                 control={form.control}
                 name="babyName"
@@ -240,7 +280,7 @@ export default function AdminDashboard() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="description"
@@ -248,13 +288,16 @@ export default function AdminDashboard() {
                   <FormItem>
                     <FormLabel>Descripción (opcional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Una pequeña descripción de tu lista" {...field} />
+                      <Input
+                        placeholder="Una pequeña descripción de tu lista"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <DialogFooter>
                 <Button type="submit" variant="baby-blue">
                   Crear lista
