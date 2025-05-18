@@ -12,6 +12,14 @@ if [ -z "$DATABASE_URL" ]; then
   exit 1
 fi
 
+# Corregir las importaciones en los archivos compilados
+echo "Corrigiendo las importaciones en los archivos compilados..."
+sed -i 's|import \* as schema from "../shared/schema";|import * as schema from "../shared/schema.js";|g' /app/dist/db/index.js
+
+# Corregir la ruta de los archivos estáticos en vite.js
+echo "Corrigiendo la ruta de los archivos estáticos..."
+sed -i 's|const distPath = path.resolve(import.meta.dirname, "public");|const distPath = path.resolve(import.meta.dirname, "..", "public");|g' /app/dist/server/vite.js
+echo "Importaciones y rutas corregidas."
 
 # Ejecutar migraciones de base de datos
 echo "Ejecutando migraciones de base de datos..."
