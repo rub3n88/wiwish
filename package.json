@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx server/index.ts",
-    "build": "tsc && vite build",
+    "build": "tsc && tsc-alias && vite build",
     "start": "NODE_ENV=production node dist/server/index.js",
     "check": "tsc",
     "db:push": "npx drizzle-kit push --force --config=./drizzle.config.ts",
@@ -100,6 +100,7 @@
     "esbuild": "^0.24.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
+    "tsc-alias": "^1.8.16",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",
     "vite": "^5.4.9"
