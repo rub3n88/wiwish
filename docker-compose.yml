@@ -5,16 +5,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      # Mapea el puerto 5000 del host al puerto 5000 del contenedor
-      # Puedes cambiar el puerto del host si es necesario (ej. "80:5000")
-      - "5000:5000"
     environment:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL}
       SESSION_SECRET: ${SESSION_SECRET}
-      PORT: ${PORT}
-    restart: unless-stopped
+    # restart: unless-stopped
     # networks:
     #   - wiwish-net
     # volumes:

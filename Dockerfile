@@ -26,10 +26,10 @@ RUN ls -la dist/db/ # Si esperas archivos en dist/db/
 RUN ls -la dist/shared/ # Si esperas archivos en dist/shared/
 
 # Etapa 2: Producción
-FROM node:20-alpine
+FROM node:22-alpine
 
 LABEL maintainer="wiwish-dev-team"
-LABEL description="Imagen de producción para la aplicación Wiwish"
+LABEL description="Imagen de producción para la aplicación Wiwish app"
 
 WORKDIR /app
 
@@ -63,8 +63,8 @@ COPY entrypoint.sh ./
 RUN chmod +x ./entrypoint.sh
 
 # Exponer el puerto en el que se ejecuta la aplicación dentro del contenedor
-# Asegúrate de que tu servidor Express escuche en process.env.PORT || 5000
-EXPOSE 5000
+# Asegúrate de que tu servidor Express escuche en 3000
+EXPOSE 3000
 
 # Comando para iniciar la aplicación usando el entrypoint
 CMD ["./entrypoint.sh"] 

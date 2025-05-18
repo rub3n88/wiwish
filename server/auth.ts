@@ -4,8 +4,8 @@ import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
-import { storage } from "./storage";
-import { User as SelectUser } from "@shared/schema";
+import { storage } from "./storage.js";
+import { User as SelectUser } from "../shared/schema.js";
 
 declare global {
   namespace Express {
@@ -29,8 +29,9 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
-  
+  const sessionSecret =
+    process.env.SESSION_SECRET || randomBytes(32).toString("hex");
+
   const sessionSettings: session.SessionOptions = {
     secret: sessionSecret,
     resave: false,
@@ -40,7 +41,7 @@ export function setupAuth(app: Express) {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-    }
+    },
   };
 
   app.set("trust proxy", 1);
@@ -60,7 +61,7 @@ export function setupAuth(app: Express) {
       } catch (error) {
         return done(error);
       }
-    }),
+    })
   );
 
   passport.serializeUser((user, done) => done(null, user.id));
@@ -77,7 +78,9 @@ export function setupAuth(app: Express) {
     try {
       const existingUser = await storage.getUserByUsername(req.body.username);
       if (existingUser) {
-        return res.status(400).json({ message: "El nombre de usuario ya existe" });
+        return res
+          .status(400)
+          .json({ message: "El nombre de usuario ya existe" });
       }
 
       const user = await storage.createUser({

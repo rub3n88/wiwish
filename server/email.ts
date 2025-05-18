@@ -1,14 +1,14 @@
-import nodemailer from 'nodemailer';
-import { Gift } from '@shared/schema';
+import nodemailer from "nodemailer";
+import { Gift } from "../shared/schema.js";
 
 // Email configuration
 const emailConfig = {
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.EMAIL_PORT || '587'),
-  secure: process.env.EMAIL_SECURE === 'true',
+  host: process.env.EMAIL_HOST || "smtp.gmail.com",
+  port: parseInt(process.env.EMAIL_PORT || "587"),
+  secure: process.env.EMAIL_SECURE === "true",
   auth: {
-    user: process.env.EMAIL_USER || '',
-    pass: process.env.EMAIL_PASSWORD || '',
+    user: process.env.EMAIL_USER || "",
+    pass: process.env.EMAIL_PASSWORD || "",
   },
 };
 
@@ -17,10 +17,10 @@ const transporter = nodemailer.createTransport(emailConfig);
 
 // Get the base URL for links
 function getBaseUrl(): string {
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.APP_URL || 'https://babyregistry.com';
+  if (process.env.NODE_ENV === "production") {
+    return process.env.APP_URL || "https://babyregistry.com";
   }
-  return 'http://localhost:5000';
+  return "http://localhost:3000";
 }
 
 // Send a reservation confirmation email
@@ -29,7 +29,7 @@ export async function sendReservationEmail(
   name: string,
   gift: Gift,
   registryBabyName: string,
-  cancellationToken: string,
+  cancellationToken: string
 ): Promise<void> {
   const baseUrl = getBaseUrl();
   const cancellationUrl = `${baseUrl}/cancel-reservation/${cancellationToken}`;
@@ -43,12 +43,24 @@ export async function sendReservationEmail(
 
       <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center;">
-          <img src="${gift.imageUrl}" alt="${gift.name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
+          <img src="${gift.imageUrl}" alt="${
+    gift.name
+  }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
           <div>
-            <h2 style="color: #333; font-size: 18px; margin: 0 0 5px 0;">${gift.name}</h2>
-            <p style="color: #666; font-size: 14px; margin: 0 0 5px 0;">Precio: ${gift.price.toFixed(2)} €</p>
-            <p style="color: #666; font-size: 14px; margin: 0;">Tienda: ${gift.store}</p>
-            ${gift.url ? `<p style="margin-top: 8px;"><a href="${gift.url}" style="color: #339CFF; text-decoration: none;">Ver en tienda</a></p>` : ''}
+            <h2 style="color: #333; font-size: 18px; margin: 0 0 5px 0;">${
+              gift.name
+            }</h2>
+            <p style="color: #666; font-size: 14px; margin: 0 0 5px 0;">Precio: ${gift.price.toFixed(
+              2
+            )} €</p>
+            <p style="color: #666; font-size: 14px; margin: 0;">Tienda: ${
+              gift.store
+            }</p>
+            ${
+              gift.url
+                ? `<p style="margin-top: 8px;"><a href="${gift.url}" style="color: #339CFF; text-decoration: none;">Ver en tienda</a></p>`
+                : ""
+            }
           </div>
         </div>
       </div>
@@ -90,8 +102,8 @@ export async function sendReservationEmail(
     await transporter.sendMail(mailOptions);
     console.log(`Reservation confirmation email sent to ${to}`);
   } catch (error) {
-    console.error('Error sending reservation email:', error);
-    throw new Error('Failed to send reservation confirmation email');
+    console.error("Error sending reservation email:", error);
+    throw new Error("Failed to send reservation confirmation email");
   }
 }
 
@@ -99,7 +111,7 @@ export async function sendReservationEmail(
 export async function sendCancellationEmail(
   to: string,
   gift: Gift,
-  registryBabyName: string,
+  registryBabyName: string
 ): Promise<void> {
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -110,11 +122,19 @@ export async function sendCancellationEmail(
 
       <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center;">
-          <img src="${gift.imageUrl}" alt="${gift.name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
+          <img src="${gift.imageUrl}" alt="${
+    gift.name
+  }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
           <div>
-            <h2 style="color: #333; font-size: 18px; margin: 0 0 5px 0;">${gift.name}</h2>
-            <p style="color: #666; font-size: 14px; margin: 0 0 5px 0;">Precio: ${gift.price.toFixed(2)} €</p>
-            <p style="color: #666; font-size: 14px; margin: 0;">Tienda: ${gift.store}</p>
+            <h2 style="color: #333; font-size: 18px; margin: 0 0 5px 0;">${
+              gift.name
+            }</h2>
+            <p style="color: #666; font-size: 14px; margin: 0 0 5px 0;">Precio: ${gift.price.toFixed(
+              2
+            )} €</p>
+            <p style="color: #666; font-size: 14px; margin: 0;">Tienda: ${
+              gift.store
+            }</p>
           </div>
         </div>
       </div>
@@ -144,7 +164,7 @@ export async function sendCancellationEmail(
     await transporter.sendMail(mailOptions);
     console.log(`Cancellation confirmation email sent to ${to}`);
   } catch (error) {
-    console.error('Error sending cancellation email:', error);
-    throw new Error('Failed to send cancellation confirmation email');
+    console.error("Error sending cancellation email:", error);
+    throw new Error("Failed to send cancellation confirmation email");
   }
 }

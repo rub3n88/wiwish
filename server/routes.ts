@@ -1,11 +1,11 @@
 import express, { type Express, type Request } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
-import { setupAuth } from "./auth";
-import { sendReservationEmail, sendCancellationEmail } from "./email";
+import { storage } from "./storage.js";
+import { setupAuth } from "./auth.js";
+import { sendReservationEmail, sendCancellationEmail } from "./email.js";
 import { z } from "zod";
-import { db } from "../db";
-import { gifts } from "../shared/schema";
+import { db } from "../db/index.js";
+import { gifts } from "../shared/schema.js";
 import { eq } from "drizzle-orm";
 import multer from "multer";
 import path from "path";
@@ -24,10 +24,10 @@ const storage_config = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
-  }
+    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+  },
 });
 
 const upload = multer({ storage: storage_config });
@@ -37,18 +37,18 @@ const generateErrorResponse = (error: unknown) => {
   if (error instanceof z.ZodError) {
     return { message: error.message, errors: error.format() };
   }
-  
+
   if (error instanceof Error) {
     return { message: error.message };
   }
-  
+
   return { message: "Unknown error occurred" };
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Servir archivos estáticos desde la carpeta uploads
-  app.use('/uploads', express.static(uploadDir));
-  
+  app.use("/uploads", express.static(uploadDir));
+
   // Set up authentication routes (/api/register, /api/login, /api/logout, /api/user)
   setupAuth(app);
 
@@ -58,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const registries = await storage.getUserRegistries(req.user.id);
       return res.json(registries);
     } catch (error) {
@@ -82,20 +82,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const schema = z.object({
         babyName: z.string().min(2, "El nombre del bebé es obligatorio"),
         description: z.string().optional(),
         isPublic: z.boolean().default(true),
       });
-      
+
       const validatedData = schema.parse(req.body);
-      
+
       const registry = await storage.createRegistry({
         ...validatedData,
-        userId: req.user.id
+        userId: req.user.id,
       });
-      
+
       return res.status(201).json(registry);
     } catch (error) {
       console.error("Error creating registry:", error);
@@ -106,27 +106,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/registry/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       let registry;
-      
+
       // Check if the ID is a slug
       if (isNaN(parseInt(id))) {
         registry = await storage.getRegistryBySlug(id);
       } else {
         registry = await storage.getRegistryById(parseInt(id));
       }
-      
+
       if (!registry) {
-        return res.status(404).json({ message: "Lista de regalos no encontrada" });
+        return res
+          .status(404)
+          .json({ message: "Lista de regalos no encontrada" });
       }
-      
+
       // If registry is not public, check authentication
       if (!registry.isPublic) {
         if (!req.isAuthenticated() || req.user.id !== registry.userId) {
-          return res.status(403).json({ message: "No tienes permiso para ver esta lista" });
+          return res
+            .status(403)
+            .json({ message: "No tienes permiso para ver esta lista" });
         }
       }
-      
+
       return res.json(registry);
     } catch (error) {
       console.error("Error fetching registry:", error);
@@ -137,9 +141,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/registry/:id/visit", async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       let registry;
-      
+
       // Check if the ID is a slug
       if (isNaN(parseInt(id))) {
         registry = await storage.getRegistryBySlug(id);
@@ -153,11 +157,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateRegistryVisitCount(registryId);
         }
       }
-      
+
       if (!registry) {
-        return res.status(404).json({ message: "Lista de regalos no encontrada" });
+        return res
+          .status(404)
+          .json({ message: "Lista de regalos no encontrada" });
       }
-      
+
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error("Error recording registry visit:", error);
@@ -169,24 +175,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/registry/:id/gifts", async (req, res) => {
     try {
       const { id } = req.params;
-      
+
       let registryId;
-      
+
       // Check if the ID is a slug
       if (isNaN(parseInt(id))) {
         const registry = await storage.getRegistryBySlug(id);
         if (!registry) {
-          return res.status(404).json({ message: "Lista de regalos no encontrada" });
+          return res
+            .status(404)
+            .json({ message: "Lista de regalos no encontrada" });
         }
         registryId = registry.id;
       } else {
         registryId = parseInt(id);
         const registry = await storage.getRegistryById(registryId);
         if (!registry) {
-          return res.status(404).json({ message: "Lista de regalos no encontrada" });
+          return res
+            .status(404)
+            .json({ message: "Lista de regalos no encontrada" });
         }
       }
-      
+
       const gifts = await storage.getGiftsByRegistryId(registryId);
       return res.json(gifts);
     } catch (error) {
@@ -200,33 +210,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const schema = z.object({
         name: z.string().min(2, "El nombre del regalo es obligatorio"),
         description: z.string().default(""),
-        price: z.coerce.number().min(0, "El precio debe ser un número positivo"),
+        price: z.coerce
+          .number()
+          .min(0, "El precio debe ser un número positivo"),
         imageUrl: z.string().min(10, "La URL de la imagen es obligatoria"),
-        url: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
+        url: z
+          .string()
+          .url("Debe ser una URL válida")
+          .optional()
+          .or(z.literal("")),
         store: z.string().default(""),
         category: z.string().min(1, "La categoría es obligatoria"),
-        registryId: z.number().int("El ID de la lista de regalos es obligatorio"),
+        registryId: z
+          .number()
+          .int("El ID de la lista de regalos es obligatorio"),
       });
-      
+
       const validatedData = schema.parse(req.body);
-      
+
       // Verify the registry belongs to the authenticated user
       const registry = await storage.getRegistryById(validatedData.registryId);
       if (!registry || registry.userId !== req.user.id) {
-        return res.status(403).json({ message: "No tienes permiso para añadir regalos a esta lista" });
+        return res.status(403).json({
+          message: "No tienes permiso para añadir regalos a esta lista",
+        });
       }
-      
+
       const gift = await storage.createGift({
         ...validatedData,
         description: validatedData.description || "",
         url: validatedData.url || "",
         store: validatedData.store || "",
       });
-      
+
       return res.status(201).json(gift);
     } catch (error) {
       console.error("Error creating gift:", error);
@@ -239,35 +259,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const { id } = req.params;
       const giftId = parseInt(id);
-      
+
       const gift = await storage.getGiftById(giftId);
       if (!gift) {
         return res.status(404).json({ message: "Regalo no encontrado" });
       }
-      
+
       // Verify the gift belongs to a registry that belongs to the authenticated user
       const registry = await storage.getRegistryById(gift.registryId);
       if (!registry || registry.userId !== req.user.id) {
-        return res.status(403).json({ message: "No tienes permiso para modificar este regalo" });
+        return res
+          .status(403)
+          .json({ message: "No tienes permiso para modificar este regalo" });
       }
-      
+
       const schema = z.object({
-        name: z.string().min(2, "El nombre del regalo es obligatorio").optional(),
+        name: z
+          .string()
+          .min(2, "El nombre del regalo es obligatorio")
+          .optional(),
         description: z.string().optional(),
-        price: z.coerce.number().min(0, "El precio debe ser un número positivo").optional(),
-        imageUrl: z.string().min(10, "La URL de la imagen es obligatoria").optional(),
-        url: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
+        price: z.coerce
+          .number()
+          .min(0, "El precio debe ser un número positivo")
+          .optional(),
+        imageUrl: z
+          .string()
+          .min(10, "La URL de la imagen es obligatoria")
+          .optional(),
+        url: z
+          .string()
+          .url("Debe ser una URL válida")
+          .optional()
+          .or(z.literal("")),
         store: z.string().optional(),
         category: z.string().min(1, "La categoría es obligatoria").optional(),
       });
-      
+
       const validatedData = schema.parse(req.body);
-      
+
       const updatedGift = await storage.updateGift(giftId, validatedData);
-      
+
       return res.json(updatedGift);
     } catch (error) {
       console.error("Error updating gift:", error);
@@ -280,23 +315,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const { id } = req.params;
       const giftId = parseInt(id);
-      
+
       const gift = await storage.getGiftById(giftId);
       if (!gift) {
         return res.status(404).json({ message: "Regalo no encontrado" });
       }
-      
+
       // Verify the gift belongs to a registry that belongs to the authenticated user
       const registry = await storage.getRegistryById(gift.registryId);
       if (!registry || registry.userId !== req.user.id) {
-        return res.status(403).json({ message: "No tienes permiso para eliminar este regalo" });
+        return res
+          .status(403)
+          .json({ message: "No tienes permiso para eliminar este regalo" });
       }
-      
+
       const success = await storage.deleteGift(giftId);
-      
+
       if (success) {
         return res.status(200).json({ success: true });
       } else {
@@ -312,34 +349,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const giftId = parseInt(id);
-      
+
       const schema = z.object({
         name: z.string().min(2, "El nombre es obligatorio"),
         email: z.string().email("Debe ser un email válido"),
         message: z.string().optional().nullable(),
       });
-      
+
       const validatedData = schema.parse(req.body);
-      
+
       const gift = await storage.getGiftById(giftId);
       if (!gift) {
         return res.status(404).json({ message: "Regalo no encontrado" });
       }
-      
+
       if (gift.reservedBy) {
-        return res.status(400).json({ message: "Este regalo ya ha sido reservado" });
+        return res
+          .status(400)
+          .json({ message: "Este regalo ya ha sido reservado" });
       }
-      
+
       const updatedGift = await storage.reserveGift(
         giftId,
         validatedData.name,
         validatedData.email,
         validatedData.message || null
       );
-      
+
       // Get registry info for the email
       const registry = await storage.getRegistryById(gift.registryId);
-      
+
       // Send confirmation email
       if (registry && updatedGift.cancellationToken) {
         try {
@@ -355,7 +394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the request if email fails
         }
       }
-      
+
       return res.status(200).json(updatedGift);
     } catch (error) {
       console.error("Error reserving gift:", error);
@@ -366,25 +405,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cancel-reservation/:token", async (req, res) => {
     try {
       const { token } = req.params;
-      
+
       if (!token) {
-        return res.status(400).json({ message: "Token de cancelación no proporcionado" });
+        return res
+          .status(400)
+          .json({ message: "Token de cancelación no proporcionado" });
       }
-      
+
       // Find the gift with this cancellation token
       const giftWithToken = await db.query.gifts.findFirst({
-        where: eq(gifts.cancellationToken, token)
+        where: eq(gifts.cancellationToken, token),
       });
-      
+
       const updatedGift = await storage.cancelReservation(token);
-      
+
       if (!updatedGift) {
-        return res.status(404).json({ message: "Reserva no encontrada o ya cancelada" });
+        return res
+          .status(404)
+          .json({ message: "Reserva no encontrada o ya cancelada" });
       }
-      
+
       // Get registry info for the email
       const registry = await storage.getRegistryById(updatedGift.registryId);
-      
+
       // Send cancellation confirmation email
       if (registry && giftWithToken && giftWithToken.reservedBy) {
         try {
@@ -398,7 +441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the request if email fails
         }
       }
-      
+
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error("Error cancelling reservation:", error);
@@ -412,16 +455,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const { id } = req.params;
       const registryId = parseInt(id);
-      
+
       // Verify the registry belongs to the authenticated user
       const registry = await storage.getRegistryById(registryId);
       if (!registry || registry.userId !== req.user.id) {
-        return res.status(403).json({ message: "No tienes permiso para ver las actividades de esta lista" });
+        return res.status(403).json({
+          message: "No tienes permiso para ver las actividades de esta lista",
+        });
       }
-      
+
       const activities = await storage.getActivitiesByRegistryId(registryId);
       return res.json(activities);
     } catch (error) {
@@ -429,40 +474,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json(generateErrorResponse(error));
     }
   });
-  
+
   // Ruta para subir imágenes de regalos (CREACIÓN)
-  app.post("/api/gifts/upload", upload.single('image'), async (req, res) => {
+  app.post("/api/gifts/upload", upload.single("image"), async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       if (!req.file) {
-        return res.status(400).json({ message: "No se ha proporcionado ninguna imagen" });
+        return res
+          .status(400)
+          .json({ message: "No se ha proporcionado ninguna imagen" });
       }
-      
+
       // Extraer los datos del formulario
       const schema = z.object({
         name: z.string().min(2, "El nombre del regalo es obligatorio"),
         description: z.string().default(""),
-        price: z.coerce.number().min(0, "El precio debe ser un número positivo"),
-        url: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
+        price: z.coerce
+          .number()
+          .min(0, "El precio debe ser un número positivo"),
+        url: z
+          .string()
+          .url("Debe ser una URL válida")
+          .optional()
+          .or(z.literal("")),
         store: z.string().default(""),
         category: z.string().min(1, "La categoría es obligatoria"),
-        registryId: z.coerce.number().int("El ID de la lista de regalos es obligatorio"),
+        registryId: z.coerce
+          .number()
+          .int("El ID de la lista de regalos es obligatorio"),
       });
-      
+
       const validatedData = schema.parse(req.body);
-      
+
       // Verificar que la lista de regalos pertenece al usuario autenticado
       const registry = await storage.getRegistryById(validatedData.registryId);
       if (!registry || registry.userId !== req.user.id) {
-        return res.status(403).json({ message: "No tienes permiso para añadir regalos a esta lista" });
+        return res.status(403).json({
+          message: "No tienes permiso para añadir regalos a esta lista",
+        });
       }
-      
+
       // Crear la URL de la imagen (accesible desde la web)
       const imageUrl = `/uploads/${req.file.filename}`;
-      
+
       // Crear el regalo con la URL de la imagen
       const gift = await storage.createGift({
         ...validatedData,
@@ -471,102 +528,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
         store: validatedData.store || "",
         imageUrl: imageUrl,
       });
-      
+
       return res.status(201).json(gift);
     } catch (error) {
       console.error("Error uploading image:", error);
       return res.status(400).json(generateErrorResponse(error));
     }
   });
-  
+
   // Ruta para subir imágenes de regalos (EDICIÓN)
-  app.post("/api/gifts/:id/upload", upload.single('image'), async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Not authenticated" });
+  app.post(
+    "/api/gifts/:id/upload",
+    upload.single("image"),
+    async (req, res) => {
+      try {
+        if (!req.isAuthenticated()) {
+          return res.status(401).json({ message: "Not authenticated" });
+        }
+
+        if (!req.file) {
+          return res
+            .status(400)
+            .json({ message: "No se ha proporcionado ninguna imagen" });
+        }
+
+        const { id } = req.params;
+        const giftId = parseInt(id);
+
+        // Obtener el regalo existente
+        const existingGift = await storage.getGiftById(giftId);
+        if (!existingGift) {
+          return res.status(404).json({ message: "Regalo no encontrado" });
+        }
+
+        // Verificar que el regalo pertenece a una lista del usuario autenticado
+        const registry = await storage.getRegistryById(existingGift.registryId);
+        if (!registry || registry.userId !== req.user.id) {
+          return res
+            .status(403)
+            .json({ message: "No tienes permiso para modificar este regalo" });
+        }
+
+        // Extraer los datos del formulario
+        const schema = z.object({
+          name: z.string().min(2, "El nombre del regalo es obligatorio"),
+          description: z.string().default(""),
+          price: z.coerce
+            .number()
+            .min(0, "El precio debe ser un número positivo"),
+          url: z
+            .string()
+            .url("Debe ser una URL válida")
+            .optional()
+            .or(z.literal("")),
+          store: z.string().default(""),
+          category: z.string().min(1, "La categoría es obligatoria"),
+          registryId: z.coerce
+            .number()
+            .int("El ID de la lista de regalos es obligatorio"),
+        });
+
+        const validatedData = schema.parse(req.body);
+
+        // Crear la URL de la imagen (accesible desde la web)
+        const imageUrl = `/uploads/${req.file.filename}`;
+
+        // Actualizar el regalo con los nuevos datos y la nueva imagen
+        const updatedGift = await storage.updateGift(giftId, {
+          name: validatedData.name,
+          description: validatedData.description || "",
+          price: validatedData.price,
+          url: validatedData.url || "",
+          store: validatedData.store || "",
+          category: validatedData.category,
+          imageUrl: imageUrl,
+        });
+
+        return res.json(updatedGift);
+      } catch (error) {
+        console.error("Error updating gift with image:", error);
+        return res.status(400).json(generateErrorResponse(error));
       }
-      
-      if (!req.file) {
-        return res.status(400).json({ message: "No se ha proporcionado ninguna imagen" });
-      }
-      
-      const { id } = req.params;
-      const giftId = parseInt(id);
-      
-      // Obtener el regalo existente
-      const existingGift = await storage.getGiftById(giftId);
-      if (!existingGift) {
-        return res.status(404).json({ message: "Regalo no encontrado" });
-      }
-      
-      // Verificar que el regalo pertenece a una lista del usuario autenticado
-      const registry = await storage.getRegistryById(existingGift.registryId);
-      if (!registry || registry.userId !== req.user.id) {
-        return res.status(403).json({ message: "No tienes permiso para modificar este regalo" });
-      }
-      
-      // Extraer los datos del formulario
-      const schema = z.object({
-        name: z.string().min(2, "El nombre del regalo es obligatorio"),
-        description: z.string().default(""),
-        price: z.coerce.number().min(0, "El precio debe ser un número positivo"),
-        url: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
-        store: z.string().default(""),
-        category: z.string().min(1, "La categoría es obligatoria"),
-        registryId: z.coerce.number().int("El ID de la lista de regalos es obligatorio"),
-      });
-      
-      const validatedData = schema.parse(req.body);
-      
-      // Crear la URL de la imagen (accesible desde la web)
-      const imageUrl = `/uploads/${req.file.filename}`;
-      
-      // Actualizar el regalo con los nuevos datos y la nueva imagen
-      const updatedGift = await storage.updateGift(giftId, {
-        name: validatedData.name,
-        description: validatedData.description || "",
-        price: validatedData.price,
-        url: validatedData.url || "",
-        store: validatedData.store || "",
-        category: validatedData.category,
-        imageUrl: imageUrl,
-      });
-      
-      return res.json(updatedGift);
-    } catch (error) {
-      console.error("Error updating gift with image:", error);
-      return res.status(400).json(generateErrorResponse(error));
     }
-  });
+  );
 
   app.get("/api/cancel-reservation/:token", async (req, res) => {
     try {
       const { token } = req.params;
-      
+
       if (!token) {
-        return res.status(400).json({ message: "Token de cancelación no proporcionado" });
+        return res
+          .status(400)
+          .json({ message: "Token de cancelación no proporcionado" });
       }
-      
+
       // Find gift with this cancellation token
       const gift = await db.query.gifts.findFirst({
-        where: eq(gifts.cancellationToken, token)
+        where: eq(gifts.cancellationToken, token),
       });
-      
+
       if (!gift) {
-        return res.status(404).json({ message: "Reserva no encontrada o ya cancelada" });
+        return res
+          .status(404)
+          .json({ message: "Reserva no encontrada o ya cancelada" });
       }
-      
+
       // Get registry info for the confirmation page
       const registry = await storage.getRegistryById(gift.registryId);
-      
+
       if (!registry) {
-        return res.status(404).json({ message: "Lista de regalos no encontrada" });
+        return res
+          .status(404)
+          .json({ message: "Lista de regalos no encontrada" });
       }
-      
+
       return res.json({
         valid: true,
         gift,
-        registry
+        registry,
       });
     } catch (error) {
       console.error("Error validating cancellation token:", error);

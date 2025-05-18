@@ -1,4 +1,4 @@
-import { db } from "@db";
+import { db } from "../db/index.js";
 import {
   users,
   registries,
@@ -9,13 +9,13 @@ import {
   Registry,
   Gift,
   Activity,
-  InsertUser
-} from "@shared/schema";
+  InsertUser,
+} from "../shared/schema.js";
 import { eq, and, desc, isNull, not, SQL } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
-import { pool } from "@db";
-import { generateRandomToken, slugify } from "./utils";
+import { pool } from "../db/index.js";
+import { generateRandomToken, slugify } from "./utils.js";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -51,7 +51,10 @@ export interface IStorage {
     category: string;
     registryId: number;
   }): Promise<Gift>;
-  updateGift(id: number, data: Partial<Omit<Gift, "id" | "registryId">>): Promise<Gift>;
+  updateGift(
+    id: number,
+    data: Partial<Omit<Gift, "id" | "registryId">>
+  ): Promise<Gift>;
   deleteGift(id: number): Promise<boolean>;
   reserveGift(
     giftId: number,
@@ -69,7 +72,10 @@ export interface IStorage {
     targetName: string;
     description: string;
   }): Promise<Activity>;
-  getActivitiesByRegistryId(registryId: number, limit?: number): Promise<Activity[]>;
+  getActivitiesByRegistryId(
+    registryId: number,
+    limit?: number
+  ): Promise<Activity[]>;
 
   // Session store
   sessionStore: any; // Usamos any para evitar problemas de tipos
@@ -81,26 +87,26 @@ export class DatabaseStorage implements IStorage {
   constructor() {
     this.sessionStore = new PostgresSessionStore({
       pool,
-      createTableIfMissing: true
+      createTableIfMissing: true,
     });
   }
 
   // User methods
   async getUser(id: number): Promise<User> {
     const result = await db.query.users.findFirst({
-      where: eq(users.id, id)
+      where: eq(users.id, id),
     });
-    
+
     if (!result) {
       throw new Error(`User with id ${id} not found`);
     }
-    
+
     return result;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     return await db.query.users.findFirst({
-      where: eq(users.username, username)
+      where: eq(users.username, username),
     });
   }
 
@@ -112,20 +118,20 @@ export class DatabaseStorage implements IStorage {
   // Registry methods
   async getRegistryById(id: number): Promise<Registry | undefined> {
     return await db.query.registries.findFirst({
-      where: eq(registries.id, id)
+      where: eq(registries.id, id),
     });
   }
 
   async getRegistryBySlug(slug: string): Promise<Registry | undefined> {
     return await db.query.registries.findFirst({
-      where: eq(registries.slug, slug)
+      where: eq(registries.slug, slug),
     });
   }
 
   async getUserRegistries(userId: number): Promise<Registry[]> {
     return await db.query.registries.findMany({
       where: eq(registries.userId, userId),
-      orderBy: desc(registries.createdAt)
+      orderBy: desc(registries.createdAt),
     });
   }
 
@@ -137,23 +143,26 @@ export class DatabaseStorage implements IStorage {
   }): Promise<Registry> {
     // Generate a slug based on the baby name
     let slug = slugify(data.babyName);
-    
+
     // Check if the slug already exists and add a random suffix if it does
     const existingRegistry = await this.getRegistryBySlug(slug);
     if (existingRegistry) {
       slug = `${slug}-${Math.floor(Math.random() * 10000)}`;
     }
 
-    const [registry] = await db.insert(registries).values({
-      babyName: data.babyName,
-      description: data.description || null,
-      userId: data.userId,
-      isPublic: data.isPublic,
-      slug,
-      visitorCount: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }).returning();
+    const [registry] = await db
+      .insert(registries)
+      .values({
+        babyName: data.babyName,
+        description: data.description || null,
+        userId: data.userId,
+        isPublic: data.isPublic,
+        slug,
+        visitorCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
 
     return registry;
   }
@@ -162,32 +171,32 @@ export class DatabaseStorage implements IStorage {
     // Primero obtenemos el registro actual para obtener el conteo actual
     const registry = await this.getRegistryById(id);
     if (!registry) return;
-    
+
     // Incrementamos manualmente el contador
     const newCount = (registry.visitorCount || 0) + 1;
-    
+
     await db
       .update(registries)
-      .set({ 
+      .set({
         visitorCount: newCount,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(registries.id, id));
-    
+
     // Create activity for visit
     await this.createActivity({
       registryId: id,
       type: "REGISTRY_VIEWED",
       userDisplayName: "Visitantes",
       targetName: "la lista",
-      description: "Alguien ha visitado la lista de regalos"
+      description: "Alguien ha visitado la lista de regalos",
     });
   }
 
   async getPublicRegistries(): Promise<Registry[]> {
     return await db.query.registries.findMany({
       where: eq(registries.isPublic, true),
-      orderBy: desc(registries.createdAt)
+      orderBy: desc(registries.createdAt),
     });
   }
 
@@ -199,21 +208,20 @@ export class DatabaseStorage implements IStorage {
       const nonReservedGifts = await db
         .select()
         .from(gifts)
-        .where(and(
-          eq(gifts.registryId, registryId),
-          isNull(gifts.reservedBy)
-        ));
-      
+        .where(and(eq(gifts.registryId, registryId), isNull(gifts.reservedBy)));
+
       // Luego obtenemos los regalos reservados (donde reservedBy NO es NULL)
       const reservedGifts = await db
         .select()
         .from(gifts)
-        .where(and(
-          eq(gifts.registryId, registryId),
-          // Si no es null, entonces tiene un valor no nulo
-          not(isNull(gifts.reservedBy))
-        ));
-      
+        .where(
+          and(
+            eq(gifts.registryId, registryId),
+            // Si no es null, entonces tiene un valor no nulo
+            not(isNull(gifts.reservedBy))
+          )
+        );
+
       // Combinamos ambos arrays
       return [...nonReservedGifts, ...reservedGifts];
     } catch (error) {
@@ -225,7 +233,7 @@ export class DatabaseStorage implements IStorage {
 
   async getGiftById(id: number): Promise<Gift | undefined> {
     return await db.query.gifts.findFirst({
-      where: eq(gifts.id, id)
+      where: eq(gifts.id, id),
     });
   }
 
@@ -239,15 +247,18 @@ export class DatabaseStorage implements IStorage {
     category: string;
     registryId: number;
   }): Promise<Gift> {
-    const [gift] = await db.insert(gifts).values({
-      ...data,
-      reservedBy: null,
-      reservedByName: null,
-      reservationDate: null,
-      cancellationToken: null,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }).returning();
+    const [gift] = await db
+      .insert(gifts)
+      .values({
+        ...data,
+        reservedBy: null,
+        reservedByName: null,
+        reservationDate: null,
+        cancellationToken: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
 
     // Create activity for gift added
     await this.createActivity({
@@ -255,18 +266,21 @@ export class DatabaseStorage implements IStorage {
       type: "GIFT_ADDED",
       userDisplayName: "Administrador",
       targetName: data.name,
-      description: `Se ha añadido ${data.name} a la lista de regalos`
+      description: `Se ha añadido ${data.name} a la lista de regalos`,
     });
 
     return gift;
   }
 
-  async updateGift(id: number, data: Partial<Omit<Gift, "id" | "registryId">>): Promise<Gift> {
+  async updateGift(
+    id: number,
+    data: Partial<Omit<Gift, "id" | "registryId">>
+  ): Promise<Gift> {
     const [updatedGift] = await db
       .update(gifts)
       .set({
         ...data,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(gifts.id, id))
       .returning();
@@ -286,7 +300,7 @@ export class DatabaseStorage implements IStorage {
       type: "GIFT_DELETED",
       userDisplayName: "Administrador",
       targetName: gift.name,
-      description: `Se ha eliminado ${gift.name} de la lista de regalos`
+      description: `Se ha eliminado ${gift.name} de la lista de regalos`,
     });
 
     return true;
@@ -310,14 +324,17 @@ export class DatabaseStorage implements IStorage {
     const cancellationToken = generateRandomToken();
 
     // Create reservation record
-    const [reservation] = await db.insert(reservations).values({
-      giftId,
-      name,
-      email,
-      message: message || null,
-      cancellationToken,
-      createdAt: new Date()
-    }).returning();
+    const [reservation] = await db
+      .insert(reservations)
+      .values({
+        giftId,
+        name,
+        email,
+        message: message || null,
+        cancellationToken,
+        createdAt: new Date(),
+      })
+      .returning();
 
     // Update gift reservation status
     const [updatedGift] = await db
@@ -327,7 +344,7 @@ export class DatabaseStorage implements IStorage {
         reservedByName: name,
         reservationDate: new Date(),
         cancellationToken,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(gifts.id, giftId))
       .returning();
@@ -338,16 +355,18 @@ export class DatabaseStorage implements IStorage {
       type: "GIFT_RESERVED",
       userDisplayName: name,
       targetName: gift.name,
-      description: `${name} ha reservado ${gift.name}`
+      description: `${name} ha reservado ${gift.name}`,
     });
 
     return updatedGift;
   }
 
-  async cancelReservation(cancellationToken: string): Promise<Gift | undefined> {
+  async cancelReservation(
+    cancellationToken: string
+  ): Promise<Gift | undefined> {
     // Find the gift with this cancellation token
     const gift = await db.query.gifts.findFirst({
-      where: eq(gifts.cancellationToken, cancellationToken)
+      where: eq(gifts.cancellationToken, cancellationToken),
     });
 
     if (!gift || !gift.reservedBy) {
@@ -365,7 +384,7 @@ export class DatabaseStorage implements IStorage {
         reservedByName: null,
         reservationDate: null,
         cancellationToken: null,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(gifts.id, gift.id))
       .returning();
@@ -376,7 +395,7 @@ export class DatabaseStorage implements IStorage {
       type: "RESERVATION_CANCELLED",
       userDisplayName: reserverName,
       targetName: gift.name,
-      description: `${reserverName} ha cancelado la reserva de ${gift.name}`
+      description: `${reserverName} ha cancelado la reserva de ${gift.name}`,
     });
 
     return updatedGift;
@@ -390,19 +409,25 @@ export class DatabaseStorage implements IStorage {
     targetName: string;
     description: string;
   }): Promise<Activity> {
-    const [activity] = await db.insert(activities).values({
-      ...data,
-      createdAt: new Date()
-    }).returning();
+    const [activity] = await db
+      .insert(activities)
+      .values({
+        ...data,
+        createdAt: new Date(),
+      })
+      .returning();
 
     return activity;
   }
 
-  async getActivitiesByRegistryId(registryId: number, limit: number = 20): Promise<Activity[]> {
+  async getActivitiesByRegistryId(
+    registryId: number,
+    limit: number = 20
+  ): Promise<Activity[]> {
     return await db.query.activities.findMany({
       where: eq(activities.registryId, registryId),
       orderBy: desc(activities.createdAt),
-      limit
+      limit,
     });
   }
 }
