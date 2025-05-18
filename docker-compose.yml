@@ -14,9 +14,8 @@ services:
     # restart: unless-stopped
     # networks:
     #   - wiwish-net
-    # volumes:
-      # Solo si necesitas persistir datos fuera del contenedor (ej. uploads)
-      # - ./uploads:/app/uploads
+    volumes:
+      - ../files/uploads:/app/public/uploads
 
 # Asegúrate de crear un archivo .env.production con el siguiente contenido:
 # DATABASE_URL=postgresql://username:password@host:port/database
