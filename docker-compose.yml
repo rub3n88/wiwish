@@ -25,3 +25,7 @@ services:
 # networks:
 #   wiwish-net:
 #     driver: bridge 
+
+volumes:
+  wiwish-uploads:
+    driver: local
