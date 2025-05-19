@@ -15,7 +15,7 @@ services:
     # networks:
     #   - wiwish-net
     volumes:
-      - ../files/uploads:/app/public/uploads
+      - wiwish-uploads:/app/public/uploads
 
 # Asegúrate de crear un archivo .env.production con el siguiente contenido:
 # DATABASE_URL=postgresql://username:password@host:port/database
