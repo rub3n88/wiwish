@@ -12,4 +12,5 @@ export default defineConfig({
     url: process.env.DATABASE_URL,
   },
   verbose: true,
+  tablesFilter: ["!session"], // Ignorar la tabla session
 });

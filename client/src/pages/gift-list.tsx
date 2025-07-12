@@ -89,7 +89,9 @@ export default function GiftList() {
     const matchesCategory =
       filter.category === "all" || gift.category === filter.category;
 
-    return matchesQuery && matchesCategory;
+    const isVisible = !gift.isHidden;
+
+    return matchesQuery && matchesCategory && isVisible;
   });
 
   // Get unique categories from gifts

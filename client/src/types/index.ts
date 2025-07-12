@@ -12,6 +12,7 @@ export type Gift = {
   reservedByName: string | null;
   reservationDate: string | null;
   cancellationToken: string | null;
+  isHidden: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -31,7 +32,11 @@ export type Registry = {
 export type Activity = {
   id: number;
   registryId: number;
-  type: "GIFT_RESERVED" | "GIFT_ADDED" | "REGISTRY_VIEWED" | "RESERVATION_CANCELLED";
+  type:
+    | "GIFT_RESERVED"
+    | "GIFT_ADDED"
+    | "REGISTRY_VIEWED"
+    | "RESERVATION_CANCELLED";
   userDisplayName: string;
   targetName: string;
   description: string;

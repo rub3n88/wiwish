@@ -225,6 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .or(z.literal("")),
         store: z.string().default(""),
         category: z.string().min(1, "La categoría es obligatoria"),
+        isHidden: z.boolean().default(false),
         registryId: z
           .number()
           .int("El ID de la lista de regalos es obligatorio"),
@@ -297,6 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .or(z.literal("")),
         store: z.string().optional(),
         category: z.string().min(1, "La categoría es obligatoria").optional(),
+        isHidden: z.boolean().optional(),
       });
 
       const validatedData = schema.parse(req.body);

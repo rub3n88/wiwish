@@ -255,6 +255,7 @@ export class DatabaseStorage implements IStorage {
         reservedByName: null,
         reservationDate: null,
         cancellationToken: null,
+        isHidden: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
