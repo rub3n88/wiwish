@@ -224,7 +224,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .optional()
           .or(z.literal("")),
         store: z.string().default(""),
-        category: z.string().min(1, "La categoría es obligatoria"),
         isHidden: z.boolean().default(false),
         registryId: z
           .number()
@@ -243,6 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const gift = await storage.createGift({
         ...validatedData,
+        category: "General", // Categoría por defecto
         description: validatedData.description || "",
         url: validatedData.url || "",
         store: validatedData.store || "",
@@ -297,7 +297,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .optional()
           .or(z.literal("")),
         store: z.string().optional(),
-        category: z.string().min(1, "La categoría es obligatoria").optional(),
         isHidden: z.boolean().optional(),
       });
 

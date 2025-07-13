@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { Gift } from "@/types";
 import { DataTable } from "@/components/ui/data-table";
 import { GiftStatusBadge } from "@/components/gift-status-badge";
-import { Badge } from "@/components/ui/badge";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Eye, Edit, Trash2 } from "lucide-react";
@@ -102,21 +101,6 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
               <p className="text-soft-gray-500 text-xs">{gift.store}</p>
             </div>
           </div>
-        );
-      },
-    },
-    {
-      id: "category",
-      header: "Categoría",
-      cell: ({ row }) => {
-        const gift = row.original;
-        return (
-          <Badge
-            variant={gift.reservedBy ? "baby-pink" : "baby-blue"}
-            className="px-2 py-1 text-xs"
-          >
-            {gift.category}
-          </Badge>
         );
       },
     },

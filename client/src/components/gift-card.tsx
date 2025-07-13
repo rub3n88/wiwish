@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Gift } from "@/types";
 import { Store, ExternalLink } from "lucide-react";
 import { ImageViewer } from "@/components/ui/image-viewer";
@@ -31,14 +30,6 @@ export function GiftCard({ gift, onReserve }: GiftCardProps) {
             }`}
             onClick={() => setImageViewerOpen(true)}
           />
-          <div className="absolute top-2 right-2">
-            <Badge
-              variant={isReserved ? "baby-pink" : "baby-blue"}
-              className="px-2 py-1 text-xs"
-            >
-              {gift.category}
-            </Badge>
-          </div>
 
           {isReserved && (
             <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center">

@@ -235,16 +235,8 @@ export default function AdminDashboard() {
       {/* Add Gift Modal */}
       <AddGiftModal
         isOpen={addGiftModalOpen}
-        onClose={() => {
-          setAddGiftModalOpen(false);
-          setSelectedGift(null);
-        }}
-        registryId={activeRegistryId || undefined}
-        categories={
-          categories.length > 0
-            ? categories
-            : ["Ropa", "Juguetes", "Accesorios", "Muebles", "Otros"]
-        }
+        onClose={() => setAddGiftModalOpen(false)}
+        registryId={activeRegistry?.id}
         gift={selectedGift}
       />
 

@@ -20,13 +20,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { CloudUpload } from "lucide-react";
@@ -34,7 +27,6 @@ import { Switch } from "@/components/ui/switch";
 
 const giftFormSchema = z.object({
   name: z.string().min(2, "El nombre del regalo es obligatorio"),
-  category: z.string().min(1, "La categoría es obligatoria"),
   price: z.coerce.number().min(0, "El precio debe ser un número positivo"),
   store: z.string().optional(),
   url: z.string().url("Debe ser una URL válida").optional().or(z.literal("")),
@@ -50,7 +42,6 @@ interface AddGiftModalProps {
   isOpen: boolean;
   onClose: () => void;
   registryId?: number;
-  categories: string[];
   gift?: any; // Regalo a editar (si es una edición)
 }
 
@@ -58,7 +49,6 @@ export function AddGiftModal({
   isOpen,
   onClose,
   registryId,
-  categories,
   gift,
 }: AddGiftModalProps) {
   const { toast } = useToast();
@@ -70,7 +60,6 @@ export function AddGiftModal({
     resolver: zodResolver(giftFormSchema),
     defaultValues: {
       name: "",
-      category: "",
       price: 0,
       store: "",
       url: "",
@@ -86,7 +75,6 @@ export function AddGiftModal({
       // Si estamos en modo edición, cargamos los datos del regalo
       form.reset({
         name: gift.name || "",
-        category: gift.category || "",
         price: gift.price || 0,
         store: gift.store || "",
         url: gift.url || "",
@@ -105,7 +93,6 @@ export function AddGiftModal({
       // Si no estamos en modo edición, reseteamos el formulario
       form.reset({
         name: "",
-        category: "",
         price: 0,
         store: "",
         url: "",
@@ -159,7 +146,6 @@ export function AddGiftModal({
         const formData = new FormData();
         formData.append("image", uploadedImage);
         formData.append("name", values.name);
-        formData.append("category", values.category);
         formData.append("price", values.price.toString());
         formData.append("registryId", registryId.toString());
 
@@ -262,36 +248,6 @@ export function AddGiftModal({
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-soft-gray-700 font-medium">
-                      Categoría *
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar categoría" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

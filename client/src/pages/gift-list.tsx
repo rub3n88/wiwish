@@ -3,7 +3,6 @@ import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { PublicHeader } from "@/components/layout/public-header";
 import { GiftCard } from "@/components/gift-card";
-import { GiftFilter } from "@/components/gift-filter";
 import { InfoModal } from "@/components/info-modal";
 import { ReservationModal } from "@/components/reservation-modal";
 import { SuccessModal } from "@/components/success-modal";
@@ -34,7 +33,9 @@ export default function GiftList() {
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
   const [reserverEmail, setReserverEmail] = useState("");
   const [isGridView, setIsGridView] = useState(true);
-  const [filter, setFilter] = useState({ query: "", category: "all" });
+  const [filter, setFilter] = useState({ query: "" });
+  const [sortBy, setSortBy] = useState<"name" | "price">("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [visibleGifts, setVisibleGifts] = useState(12); // Number of initially visible gifts
 
   // Record a visit to the registry
@@ -76,28 +77,33 @@ export default function GiftList() {
   // Usar un array vacío por defecto si gifts es undefined para las derivaciones
   const currentGifts = gifts ?? [];
 
-  // Filter gifts based on search query and category
-  const filteredGifts = currentGifts.filter((gift: Gift) => {
-    const matchesQuery =
-      !filter.query ||
-      gift.name.toLowerCase().includes(filter.query.toLowerCase()) ||
-      (gift.description &&
-        gift.description.toLowerCase().includes(filter.query.toLowerCase())) ||
-      (gift.store &&
-        gift.store.toLowerCase().includes(filter.query.toLowerCase()));
+  // Filter gifts based on search query
+  const filteredGifts = currentGifts
+    .filter((gift: Gift) => {
+      const matchesQuery =
+        !filter.query ||
+        gift.name.toLowerCase().includes(filter.query.toLowerCase()) ||
+        (gift.description &&
+          gift.description
+            .toLowerCase()
+            .includes(filter.query.toLowerCase())) ||
+        (gift.store &&
+          gift.store.toLowerCase().includes(filter.query.toLowerCase()));
 
-    const matchesCategory =
-      filter.category === "all" || gift.category === filter.category;
+      const isVisible = !gift.isHidden;
 
-    const isVisible = !gift.isHidden;
-
-    return matchesQuery && matchesCategory && isVisible;
-  });
-
-  // Get unique categories from gifts
-  const categories: string[] = [
-    ...new Set(currentGifts.map((gift: Gift) => String(gift.category))),
-  ];
+      return matchesQuery && isVisible;
+    })
+    .sort((a, b) => {
+      if (sortBy === "name") {
+        const comparison = a.name.localeCompare(b.name);
+        return sortOrder === "asc" ? comparison : -comparison;
+      } else if (sortBy === "price") {
+        const comparison = a.price - b.price;
+        return sortOrder === "asc" ? comparison : -comparison;
+      }
+      return 0;
+    });
 
   // Count of available and reserved gifts
   const availableCount = currentGifts.filter(
@@ -168,7 +174,7 @@ export default function GiftList() {
       {/* Main Content */}
       <main className="flex-grow container mx-auto px-4 py-6">
         {/* Gift Counter */}
-        <div className="mb-6 bg-white rounded-lg p-4 shadow-sm flex justify-between items-center">
+        <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
           <p className="text-soft-gray-700">
             <span className="font-bold text-baby-blue-600">
               {availableCount}
@@ -179,23 +185,47 @@ export default function GiftList() {
             </span>{" "}
             regalos reservados
           </p>
-          <div>
-            <Button
-              variant="ghost"
-              className="p-2 text-soft-gray-500 hover:text-soft-gray-700 rounded-md"
-              onClick={() => setIsGridView(!isGridView)}
-            >
-              {isGridView ? (
-                <List className="h-5 w-5" />
-              ) : (
-                <Grid className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
         </div>
 
-        {/* Gift Filter */}
-        <GiftFilter categories={categories} onFilterChange={setFilter} />
+        {/* Sort Controls */}
+        <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-soft-gray-600">Ordenar por:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as "name" | "price")}
+                className="px-3 py-1 border border-soft-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-baby-blue-500"
+              >
+                <option value="name">Nombre</option>
+                <option value="price">Precio</option>
+              </select>
+              <button
+                onClick={() =>
+                  setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                }
+                className="px-3 py-1 border border-soft-gray-300 rounded-md text-sm hover:bg-soft-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-baby-blue-500"
+              >
+                {sortOrder === "asc" ? "↑ Menor a mayor" : "↓ Mayor a menor"}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-soft-gray-600">Vista:</span>
+              <Button
+                variant="ghost"
+                className="p-2 text-soft-gray-500 hover:text-soft-gray-700 rounded-md"
+                onClick={() => setIsGridView(!isGridView)}
+              >
+                {isGridView ? (
+                  <List className="h-5 w-5" />
+                ) : (
+                  <Grid className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
 
         {/* Gift Grid/List */}
         {filteredGifts.length > 0 ? (
