@@ -12,15 +12,56 @@ const emailConfig = {
   },
 };
 
+// Log email configuration (without sensitive data)
+console.log("📧 Email Configuration:");
+console.log(`  - Host: ${emailConfig.host}`);
+console.log(`  - Port: ${emailConfig.port}`);
+console.log(`  - Secure: ${emailConfig.secure}`);
+console.log(
+  `  - User: ${emailConfig.auth.user ? emailConfig.auth.user : "❌ NOT SET"}`
+);
+console.log(`  - Password: ${emailConfig.auth.pass ? "✅ SET" : "❌ NOT SET"}`);
+console.log(`  - Environment: ${process.env.NODE_ENV || "development"}`);
+
+// Verify all required environment variables
+const requiredEnvVars = [
+  "EMAIL_HOST",
+  "EMAIL_PORT",
+  "EMAIL_USER",
+  "EMAIL_PASSWORD",
+];
+const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
+
+if (missingVars.length > 0) {
+  console.warn(
+    `⚠️  Missing email environment variables: ${missingVars.join(", ")}`
+  );
+} else {
+  console.log("✅ All email environment variables are set");
+}
+
 // Email sender setup
 const transporter = nodemailer.createTransport(emailConfig);
 
+// Test the connection on startup
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ Email transporter verification failed:", error.message);
+    console.error("   Full error:", error);
+  } else {
+    console.log("✅ Email transporter verified successfully");
+  }
+});
+
 // Get the base URL for links
 function getBaseUrl(): string {
-  if (process.env.NODE_ENV === "production") {
-    return process.env.APP_URL || "https://babyregistry.com";
-  }
-  return "http://localhost:3000";
+  const baseUrl =
+    process.env.NODE_ENV === "production"
+      ? process.env.APP_URL || "https://babyregistry.com"
+      : "http://localhost:3000";
+
+  console.log(`🔗 Base URL for emails: ${baseUrl}`);
+  return baseUrl;
 }
 
 // Send a reservation confirmation email
@@ -31,6 +72,13 @@ export async function sendReservationEmail(
   registryBabyName: string,
   cancellationToken: string
 ): Promise<void> {
+  console.log(`📤 Attempting to send reservation email:`);
+  console.log(`  - To: ${to}`);
+  console.log(`  - Name: ${name}`);
+  console.log(`  - Gift: ${gift.name}`);
+  console.log(`  - Registry: ${registryBabyName}`);
+  console.log(`  - Token: ${cancellationToken ? "✅ Present" : "❌ Missing"}`);
+
   const baseUrl = getBaseUrl();
   const cancellationUrl = `${baseUrl}/cancel-reservation/${cancellationToken}`;
 
@@ -69,7 +117,7 @@ export async function sendReservationEmail(
         <p style="color: #333; font-size: 16px;">Detalles de tu reserva:</p>
         <ul style="color: #666; padding-left: 20px;">
           <li>Nombre: ${name}</li>
-          <li>Email: ${to}</li>
+          <li>Email: ${to}
           <li>Fecha de reserva: ${new Date().toLocaleDateString()}</li>
         </ul>
       </div>
@@ -98,11 +146,21 @@ export async function sendReservationEmail(
     html: htmlContent,
   };
 
+  console.log(`📧 Mail options prepared:`);
+  console.log(`  - From: ${mailOptions.from}`);
+  console.log(`  - To: ${mailOptions.to}`);
+  console.log(`  - Subject: ${mailOptions.subject}`);
+
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Reservation confirmation email sent to ${to}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Reservation confirmation email sent successfully:`);
+    console.log(`  - Message ID: ${info.messageId}`);
+    console.log(`  - Response: ${info.response}`);
   } catch (error) {
-    console.error("Error sending reservation email:", error);
+    console.error("❌ Error sending reservation email:");
+    console.error(`  - Error message: ${error.message}`);
+    console.error(`  - Error code: ${error.code}`);
+    console.error(`  - Full error:`, error);
     throw new Error("Failed to send reservation confirmation email");
   }
 }
@@ -113,6 +171,11 @@ export async function sendCancellationEmail(
   gift: Gift,
   registryBabyName: string
 ): Promise<void> {
+  console.log(`📤 Attempting to send cancellation email:`);
+  console.log(`  - To: ${to}`);
+  console.log(`  - Gift: ${gift.name}`);
+  console.log(`  - Registry: ${registryBabyName}`);
+
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
       <div style="text-align: center; margin-bottom: 20px;">
@@ -160,11 +223,21 @@ export async function sendCancellationEmail(
     html: htmlContent,
   };
 
+  console.log(`📧 Mail options prepared:`);
+  console.log(`  - From: ${mailOptions.from}`);
+  console.log(`  - To: ${mailOptions.to}`);
+  console.log(`  - Subject: ${mailOptions.subject}`);
+
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Cancellation confirmation email sent to ${to}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Cancellation confirmation email sent successfully:`);
+    console.log(`  - Message ID: ${info.messageId}`);
+    console.log(`  - Response: ${info.response}`);
   } catch (error) {
-    console.error("Error sending cancellation email:", error);
+    console.error("❌ Error sending cancellation email:");
+    console.error(`  - Error message: ${error.message}`);
+    console.error(`  - Error code: ${error.code}`);
+    console.error(`  - Full error:`, error);
     throw new Error("Failed to send cancellation confirmation email");
   }
 }
