@@ -4,7 +4,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { GiftStatusBadge } from "@/components/gift-status-badge";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +31,8 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
   const [activeTab, setActiveTab] = useState("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [giftToDelete, setGiftToDelete] = useState<Gift | null>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [giftToCancel, setGiftToCancel] = useState<Gift | null>(null);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<{
     url: string;
@@ -49,6 +51,11 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
   const handleDeleteClick = (gift: Gift) => {
     setGiftToDelete(gift);
     setDeleteDialogOpen(true);
+  };
+
+  const handleCancelClick = (gift: Gift) => {
+    setGiftToCancel(gift);
+    setCancelDialogOpen(true);
   };
 
   const handleImageClick = (imageUrl: string, name: string) => {
@@ -79,6 +86,35 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
     } finally {
       setDeleteDialogOpen(false);
       setGiftToDelete(null);
+    }
+  };
+
+  const handleCancelReservation = async () => {
+    if (!giftToCancel || !giftToCancel.cancellationToken) return;
+
+    try {
+      await apiRequest(
+        "POST",
+        `/api/cancel-reservation/${giftToCancel.cancellationToken}`
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: [`/api/registry/${giftToCancel.registryId}/gifts`],
+      });
+
+      toast({
+        title: "Reserva cancelada",
+        description: `La reserva de "${giftToCancel.name}" ha sido cancelada. Se ha enviado un email de confirmación al usuario.`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error al cancelar",
+        description: "No se pudo cancelar la reserva. Inténtalo de nuevo.",
+      });
+    } finally {
+      setCancelDialogOpen(false);
+      setGiftToCancel(null);
     }
   };
 
@@ -166,6 +202,7 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
       header: () => <div className="text-right">Acciones</div>,
       cell: ({ row }) => {
         const gift = row.original;
+        const isReserved = gift.reservedBy !== null;
 
         return (
           <div className="flex justify-end space-x-2">
@@ -179,6 +216,16 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
             <Button variant="ghost" size="icon" onClick={() => onEdit(gift)}>
               <Edit className="h-4 w-4 text-soft-gray-500 hover:text-soft-gray-700" />
             </Button>
+            {isReserved && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleCancelClick(gift)}
+                title="Cancelar reserva"
+              >
+                <X className="h-4 w-4 text-soft-gray-500 hover:text-orange-500" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -246,6 +293,28 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
               className="bg-destructive text-destructive-foreground"
             >
               Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cancelar reserva?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esto cancelará la reserva del regalo "{giftToCancel?.name}" hecha
+              por {giftToCancel?.reservedByName}. Se enviará un email de
+              confirmación al usuario automáticamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelReservation}
+              className="bg-orange-500 text-white hover:bg-orange-600"
+            >
+              Cancelar reserva
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
