@@ -77,23 +77,24 @@ export default function GiftList() {
   // Usar un array vacío por defecto si gifts es undefined para las derivaciones
   const currentGifts = gifts ?? [];
 
-  // Filter gifts based on search query
-  const filteredGifts = currentGifts
-    .filter((gift: Gift) => {
-      const matchesQuery =
-        !filter.query ||
-        gift.name.toLowerCase().includes(filter.query.toLowerCase()) ||
-        (gift.description &&
-          gift.description
-            .toLowerCase()
-            .includes(filter.query.toLowerCase())) ||
-        (gift.store &&
-          gift.store.toLowerCase().includes(filter.query.toLowerCase()));
+  // Filter and separate gifts based on search query and reservation status
+  const filteredGifts = currentGifts.filter((gift: Gift) => {
+    const matchesQuery =
+      !filter.query ||
+      gift.name.toLowerCase().includes(filter.query.toLowerCase()) ||
+      (gift.description &&
+        gift.description.toLowerCase().includes(filter.query.toLowerCase())) ||
+      (gift.store &&
+        gift.store.toLowerCase().includes(filter.query.toLowerCase()));
 
-      const isVisible = !gift.isHidden;
+    const isVisible = !gift.isHidden;
 
-      return matchesQuery && isVisible;
-    })
+    return matchesQuery && isVisible;
+  });
+
+  // Separate available and reserved gifts
+  const availableGifts = filteredGifts
+    .filter((gift: Gift) => !gift.reservedBy)
     .sort((a, b) => {
       if (sortBy === "name") {
         const comparison = a.name.localeCompare(b.name);
@@ -105,13 +106,22 @@ export default function GiftList() {
       return 0;
     });
 
-  // Count of available and reserved gifts
-  const availableCount = currentGifts.filter(
-    (gift: Gift) => !gift.reservedBy
-  ).length;
-  const reservedCount = currentGifts.filter(
-    (gift: Gift) => gift.reservedBy
-  ).length;
+  const reservedGifts = filteredGifts
+    .filter((gift: Gift) => gift.reservedBy)
+    .sort((a, b) => {
+      if (sortBy === "name") {
+        const comparison = a.name.localeCompare(b.name);
+        return sortOrder === "asc" ? comparison : -comparison;
+      } else if (sortBy === "price") {
+        const comparison = a.price - b.price;
+        return sortOrder === "asc" ? comparison : -comparison;
+      }
+      return 0;
+    });
+
+  // Count of available and reserved gifts (from filtered results)
+  const availableCount = availableGifts.length;
+  const reservedCount = reservedGifts.length;
 
   // Handle gift reservation
   const handleReserveGift = (gift: Gift) => {
@@ -227,24 +237,69 @@ export default function GiftList() {
           </div>
         </div>
 
-        {/* Gift Grid/List */}
-        {filteredGifts.length > 0 ? (
-          <div
-            className={`${
-              isGridView
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-                : "space-y-4"
-            } mb-8`}
-          >
-            {filteredGifts.slice(0, visibleGifts).map((gift: Gift) => (
-              <GiftCard
-                key={gift.id}
-                gift={gift}
-                onReserve={handleReserveGift}
-              />
-            ))}
+        {/* Available Gifts Section */}
+        {availableGifts.length > 0 && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-soft-gray-800 mb-4 flex items-center">
+              <span className="inline-block w-3 h-3 bg-safari-green-500 rounded-full mr-2"></span>
+              Regalos disponibles ({availableGifts.length})
+            </h3>
+            <div
+              className={`${
+                isGridView
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                  : "space-y-4"
+              }`}
+            >
+              {availableGifts.slice(0, visibleGifts).map((gift: Gift) => (
+                <GiftCard
+                  key={gift.id}
+                  gift={gift}
+                  onReserve={handleReserveGift}
+                />
+              ))}
+            </div>
           </div>
-        ) : (
+        )}
+
+        {/* Reserved Gifts Section */}
+        {reservedGifts.length > 0 && (
+          <div className="mb-8">
+            {/* Separator */}
+            {availableGifts.length > 0 && (
+              <div className="flex items-center my-8">
+                <div className="flex-1 border-t border-soft-gray-200"></div>
+                <div className="px-4 text-sm text-soft-gray-500 bg-soft-gray-100 rounded-full py-1">
+                  Ya reservados
+                </div>
+                <div className="flex-1 border-t border-soft-gray-200"></div>
+              </div>
+            )}
+
+            <h3 className="text-lg font-semibold text-soft-gray-600 mb-4 flex items-center">
+              <span className="inline-block w-3 h-3 bg-safari-brown-500 rounded-full mr-2"></span>
+              Regalos reservados ({reservedGifts.length})
+            </h3>
+            <div
+              className={`${
+                isGridView
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+                  : "space-y-4"
+              } opacity-75`}
+            >
+              {reservedGifts.map((gift: Gift) => (
+                <GiftCard
+                  key={gift.id}
+                  gift={gift}
+                  onReserve={handleReserveGift}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* No results message */}
+        {availableGifts.length === 0 && reservedGifts.length === 0 && (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm mb-8">
             <p className="text-soft-gray-600">
               No se encontraron regalos que coincidan con tu búsqueda.
@@ -252,8 +307,8 @@ export default function GiftList() {
           </div>
         )}
 
-        {/* Load More Button */}
-        {filteredGifts.length > visibleGifts && (
+        {/* Load More Button - only for available gifts */}
+        {availableGifts.length > visibleGifts && (
           <div className="text-center mb-8">
             <Button
               variant="outline"
@@ -262,7 +317,7 @@ export default function GiftList() {
             >
               <span className="flex items-center justify-center">
                 <ChevronDown className="mr-2 h-4 w-4" />
-                Ver más regalos
+                Ver más regalos disponibles
               </span>
             </Button>
           </div>
