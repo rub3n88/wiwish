@@ -7,6 +7,7 @@ import HomePage from "@/pages/home-page";
 import GiftList from "@/pages/gift-list";
 import AuthPage from "@/pages/auth-page";
 import AdminDashboard from "@/pages/admin-dashboard";
+import CancelReservation from "@/pages/cancel-reservation";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/" component={HomePage} />
       <Route path="/registry/:id" component={GiftList} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/cancel-reservation/:token" component={CancelReservation} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
