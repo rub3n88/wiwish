@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
+import { ImageViewer } from "@/components/ui/image-viewer";
 
 interface GiftTableProps {
   gifts: Gift[];
@@ -31,6 +32,11 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
   const [activeTab, setActiveTab] = useState("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [giftToDelete, setGiftToDelete] = useState<Gift | null>(null);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    name: string;
+  } | null>(null);
 
   const filteredGifts = useMemo(() => {
     if (activeTab === "all") return gifts;
@@ -44,6 +50,11 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
   const handleDeleteClick = (gift: Gift) => {
     setGiftToDelete(gift);
     setDeleteDialogOpen(true);
+  };
+
+  const handleImageClick = (imageUrl: string, name: string) => {
+    setSelectedImage({ url: imageUrl, name });
+    setImageViewerOpen(true);
   };
 
   const handleDelete = async () => {
@@ -83,7 +94,8 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
             <img
               src={gift.imageUrl}
               alt={gift.name}
-              className="w-10 h-10 rounded object-cover mr-3"
+              className="w-10 h-10 rounded object-cover mr-3 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => handleImageClick(gift.imageUrl, gift.name)}
             />
             <div className="truncate max-w-[200px]">
               <p className="text-soft-gray-800 font-medium">{gift.name}</p>
@@ -254,6 +266,14 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ImageViewer
+        isOpen={imageViewerOpen}
+        onClose={() => setImageViewerOpen(false)}
+        imageUrl={selectedImage?.url || ""}
+        alt={selectedImage?.name || ""}
+        title={selectedImage?.name || ""}
+      />
     </>
   );
 }
