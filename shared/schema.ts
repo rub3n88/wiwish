@@ -66,7 +66,7 @@ export const gifts = pgTable("gifts", {
   imageUrl: text("image_url").notNull(),
   url: text("url").default(""),
   store: text("store").default(""),
-  category: text("category").notNull(),
+  category: text("category").default("General"),
   registryId: integer("registry_id")
     .references(() => registries.id)
     .notNull(),

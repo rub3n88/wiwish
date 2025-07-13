@@ -502,7 +502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .optional()
           .or(z.literal("")),
         store: z.string().default(""),
-        category: z.string().min(1, "La categoría es obligatoria"),
+
         registryId: z.coerce
           .number()
           .int("El ID de la lista de regalos es obligatorio"),

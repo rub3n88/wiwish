@@ -48,7 +48,6 @@ export interface IStorage {
     imageUrl: string;
     url: string;
     store: string;
-    category: string;
     registryId: number;
   }): Promise<Gift>;
   updateGift(
@@ -244,7 +243,6 @@ export class DatabaseStorage implements IStorage {
     imageUrl: string;
     url: string;
     store: string;
-    category: string;
     registryId: number;
   }): Promise<Gift> {
     const [gift] = await db
