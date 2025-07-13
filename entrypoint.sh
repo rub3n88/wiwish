@@ -21,23 +21,23 @@ echo "Corrigiendo la ruta de los archivos estáticos..."
 sed -i 's|const distPath = path.resolve(import.meta.dirname, "public");|const distPath = path.resolve(import.meta.dirname, "..", "public");|g' /app/dist/server/vite.js
 echo "Importaciones y rutas corregidas."
 
-# Crear tabla session antes de las migraciones
-echo "Creando tabla session..."
-psql "$DATABASE_URL" -c "
-CREATE TABLE IF NOT EXISTS \"session\" (
-  \"sid\" varchar NOT NULL COLLATE \"default\",
-  \"sess\" json NOT NULL,
-  \"expire\" timestamp(6) NOT NULL
-);
-DO \$\$ 
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'session_pkey') THEN
-        ALTER TABLE \"session\" ADD CONSTRAINT \"session_pkey\" PRIMARY KEY (\"sid\");
-    END IF;
-END \$\$;
-CREATE INDEX IF NOT EXISTS \"IDX_session_expire\" ON \"session\" (\"expire\");
-"
-echo "Tabla session creada."
+# # Crear tabla session antes de las migraciones
+# echo "Creando tabla session..."
+# psql "$DATABASE_URL" -c "
+# CREATE TABLE IF NOT EXISTS \"session\" (
+#   \"sid\" varchar NOT NULL COLLATE \"default\",
+#   \"sess\" json NOT NULL,
+#   \"expire\" timestamp(6) NOT NULL
+# );
+# DO \$\$ 
+# BEGIN
+#     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'session_pkey') THEN
+#         ALTER TABLE \"session\" ADD CONSTRAINT \"session_pkey\" PRIMARY KEY (\"sid\");
+#     END IF;
+# END \$\$;
+# CREATE INDEX IF NOT EXISTS \"IDX_session_expire\" ON \"session\" (\"expire\");
+# "
+# echo "Tabla session creada."
 
 # Ejecutar migraciones de base de datos
 echo "Ejecutando migraciones de base de datos..."
