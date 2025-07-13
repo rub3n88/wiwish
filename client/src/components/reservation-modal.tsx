@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 const reservationSchema = z.object({
@@ -65,6 +65,11 @@ export function ReservationModal({
       await apiRequest("POST", `/api/gifts/${gift.id}/reserve`, {
         ...values,
         giftId: gift.id,
+      });
+
+      // Invalidate the gifts query to refresh the list
+      queryClient.invalidateQueries({
+        queryKey: [`/api/registry/${gift.registryId}/gifts`],
       });
 
       toast({

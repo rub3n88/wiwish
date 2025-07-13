@@ -45,6 +45,22 @@ function getBaseUrl(): string {
   return baseUrl;
 }
 
+// Convert relative image URLs to absolute URLs for emails
+function getAbsoluteImageUrl(imageUrl: string): string {
+  const baseUrl = getBaseUrl();
+
+  // If it's already an absolute URL, return as is
+  if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+    console.log(`🖼️  Image URL is already absolute: ${imageUrl}`);
+    return imageUrl;
+  }
+
+  // If it's a relative URL, make it absolute
+  const absoluteUrl = `${baseUrl}${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+  console.log(`🖼️  Converting relative URL: ${imageUrl} → ${absoluteUrl}`);
+  return absoluteUrl;
+}
+
 // Send a reservation confirmation email
 export async function sendReservationEmail(
   to: string,
@@ -62,6 +78,7 @@ export async function sendReservationEmail(
 
   const baseUrl = getBaseUrl();
   const cancellationUrl = `${baseUrl}/cancel-reservation/${cancellationToken}`;
+  const absoluteImageUrl = getAbsoluteImageUrl(gift.imageUrl);
 
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -72,7 +89,7 @@ export async function sendReservationEmail(
 
       <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center;">
-          <img src="${gift.imageUrl}" alt="${
+          <img src="${absoluteImageUrl}" alt="${
             gift.name
           }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
           <div>
@@ -162,6 +179,8 @@ export async function sendCancellationEmail(
   console.log(`  - Gift: ${gift.name}`);
   console.log(`  - Registry: ${registryBabyName}`);
 
+  const absoluteImageUrl = getAbsoluteImageUrl(gift.imageUrl);
+
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
       <div style="text-align: center; margin-bottom: 20px;">
@@ -171,7 +190,7 @@ export async function sendCancellationEmail(
 
       <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center;">
-          <img src="${gift.imageUrl}" alt="${
+          <img src="${absoluteImageUrl}" alt="${
             gift.name
           }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
           <div>
