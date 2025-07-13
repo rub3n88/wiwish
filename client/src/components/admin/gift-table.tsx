@@ -205,19 +205,19 @@ export function GiftTable({ gifts, onEdit }: GiftTableProps) {
             <TabsList className="flex bg-transparent">
               <TabsTrigger
                 value="all"
-                className="px-4 py-3 data-[state=active]:text-baby-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-baby-blue-500 data-[state=active]:font-medium data-[state=inactive]:text-soft-gray-600 data-[state=inactive]:hover:text-soft-gray-800 bg-transparent"
+                className="px-4 py-3 data-[state=active]:text-safari-green-600 data-[state=active]:border-b-2 data-[state=active]:border-safari-green-500 data-[state=active]:font-medium data-[state=inactive]:text-soft-gray-600 data-[state=inactive]:hover:text-soft-gray-800 bg-transparent"
               >
                 Todos ({gifts.length})
               </TabsTrigger>
               <TabsTrigger
                 value="available"
-                className="px-4 py-3 data-[state=active]:text-baby-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-baby-blue-500 data-[state=active]:font-medium data-[state=inactive]:text-soft-gray-600 data-[state=inactive]:hover:text-soft-gray-800 bg-transparent"
+                className="px-4 py-3 data-[state=active]:text-safari-green-600 data-[state=active]:border-b-2 data-[state=active]:border-safari-green-500 data-[state=active]:font-medium data-[state=inactive]:text-soft-gray-600 data-[state=inactive]:hover:text-soft-gray-800 bg-transparent"
               >
                 Disponibles ({availableCount})
               </TabsTrigger>
               <TabsTrigger
                 value="reserved"
-                className="px-4 py-3 data-[state=active]:text-baby-blue-600 data-[state=active]:border-b-2 data-[state=active]:border-baby-blue-500 data-[state=active]:font-medium data-[state=inactive]:text-soft-gray-600 data-[state=inactive]:hover:text-soft-gray-800 bg-transparent"
+                className="px-4 py-3 data-[state=active]:text-safari-green-600 data-[state=active]:border-b-2 data-[state=active]:border-safari-green-500 data-[state=active]:font-medium data-[state=inactive]:text-soft-gray-600 data-[state=inactive]:hover:text-soft-gray-800 bg-transparent"
               >
                 Reservados ({reservedCount})
               </TabsTrigger>

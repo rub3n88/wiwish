@@ -143,7 +143,7 @@ export default function GiftList() {
             Lo sentimos, la lista de regalos que buscas no existe o no está
             disponible.
           </p>
-          <Button variant="baby-blue" asChild>
+          <Button variant="safari-green" asChild>
             <a href="/">Volver al inicio</a>
           </Button>
         </div>
@@ -156,7 +156,7 @@ export default function GiftList() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-baby-blue-500 mb-4"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-safari-green-500 mb-4"></div>
           <p className="text-soft-gray-600">Cargando lista de regalos...</p>
         </div>
       </div>
@@ -176,11 +176,11 @@ export default function GiftList() {
         {/* Gift Counter */}
         <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
           <p className="text-soft-gray-700">
-            <span className="font-bold text-baby-blue-600">
+            <span className="font-bold text-safari-green-600">
               {availableCount}
             </span>{" "}
             regalos disponibles |
-            <span className="font-bold text-baby-pink-600">
+            <span className="font-bold text-safari-brown-600">
               {reservedCount}
             </span>{" "}
             regalos reservados
@@ -195,7 +195,7 @@ export default function GiftList() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as "name" | "price")}
-                className="px-3 py-1 border border-soft-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-baby-blue-500"
+                className="px-3 py-1 border border-soft-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-safari-green-500"
               >
                 <option value="name">Nombre</option>
                 <option value="price">Precio</option>
@@ -204,7 +204,7 @@ export default function GiftList() {
                 onClick={() =>
                   setSortOrder(sortOrder === "asc" ? "desc" : "asc")
                 }
-                className="px-3 py-1 border border-soft-gray-300 rounded-md text-sm hover:bg-soft-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-baby-blue-500"
+                className="px-3 py-1 border border-soft-gray-300 rounded-md text-sm hover:bg-soft-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-safari-green-500"
               >
                 {sortOrder === "asc" ? "↑ Menor a mayor" : "↓ Mayor a menor"}
               </button>

@@ -33,7 +33,7 @@ export function GiftCard({ gift, onReserve }: GiftCardProps) {
 
           {isReserved && (
             <div className="absolute inset-0 bg-white bg-opacity-60 flex items-center justify-center">
-              <div className="bg-baby-pink-500 text-white px-3 py-2 rounded-full font-bold transform rotate-12">
+              <div className="bg-safari-brown-500 text-white px-3 py-2 rounded-full font-bold transform rotate-12">
                 Ya reservado
               </div>
             </div>
@@ -66,7 +66,9 @@ export function GiftCard({ gift, onReserve }: GiftCardProps) {
                 <div className="flex items-center">
                   <Store
                     className={`h-4 w-4 ${
-                      isReserved ? "text-baby-pink-500" : "text-baby-blue-500"
+                      isReserved
+                        ? "text-safari-brown-500"
+                        : "text-safari-green-500"
                     } mr-1`}
                   />
                   <span className="text-xs text-soft-gray-600">
@@ -91,7 +93,7 @@ export function GiftCard({ gift, onReserve }: GiftCardProps) {
                 )}
 
                 <Button
-                  variant="baby-blue"
+                  variant="safari-green"
                   className="w-full"
                   onClick={() => onReserve(gift)}
                 >

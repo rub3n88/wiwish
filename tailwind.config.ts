@@ -61,22 +61,30 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Baby colors
-        "baby-blue": {
-          "100": "hsl(var(--baby-blue-100))",
-          "200": "hsl(var(--baby-blue-200))",
-          "300": "hsl(var(--baby-blue-300))",
-          "400": "hsl(var(--baby-blue-400))",
-          "500": "hsl(var(--baby-blue-500))",
-          "600": "hsl(var(--baby-blue-600))",
+        // Safari/Animal colors
+        "safari-green": {
+          "100": "hsl(var(--safari-green-100))",
+          "200": "hsl(var(--safari-green-200))",
+          "300": "hsl(var(--safari-green-300))",
+          "400": "hsl(var(--safari-green-400))",
+          "500": "hsl(var(--safari-green-500))",
+          "600": "hsl(var(--safari-green-600))",
         },
-        "baby-pink": {
-          "100": "hsl(var(--baby-pink-100))",
-          "200": "hsl(var(--baby-pink-200))",
-          "300": "hsl(var(--baby-pink-300))",
-          "400": "hsl(var(--baby-pink-400))",
-          "500": "hsl(var(--baby-pink-500))",
-          "600": "hsl(var(--baby-pink-600))",
+        "safari-brown": {
+          "100": "hsl(var(--safari-brown-100))",
+          "200": "hsl(var(--safari-brown-200))",
+          "300": "hsl(var(--safari-brown-300))",
+          "400": "hsl(var(--safari-brown-400))",
+          "500": "hsl(var(--safari-brown-500))",
+          "600": "hsl(var(--safari-brown-600))",
+        },
+        "safari-beige": {
+          "100": "hsl(var(--safari-beige-100))",
+          "200": "hsl(var(--safari-beige-200))",
+          "300": "hsl(var(--safari-beige-300))",
+          "400": "hsl(var(--safari-beige-400))",
+          "500": "hsl(var(--safari-beige-500))",
+          "600": "hsl(var(--safari-beige-600))",
         },
         "soft-gray": {
           "100": "hsl(var(--soft-gray-100))",

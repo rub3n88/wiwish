@@ -175,7 +175,7 @@ export default function AdminDashboard() {
   if (registriesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-10 w-10 animate-spin text-baby-blue-500" />
+        <Loader2 className="h-10 w-10 animate-spin text-safari-green-500" />
       </div>
     );
   }
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
                   Gestión de Regalos
                 </h2>
                 <Button
-                  variant="baby-blue"
+                  variant="safari-green"
                   className="flex items-center"
                   onClick={() => {
                     setSelectedGift(null);
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
 
               {giftsLoading ? (
                 <div className="bg-white rounded-lg shadow-sm p-10 flex justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-baby-blue-500" />
+                  <Loader2 className="h-6 w-6 animate-spin text-safari-green-500" />
                 </div>
               ) : (
                 <GiftTable gifts={gifts || []} onEdit={handleGiftEdit} />
@@ -291,7 +291,7 @@ export default function AdminDashboard() {
               />
 
               <DialogFooter>
-                <Button type="submit" variant="baby-blue">
+                <Button type="submit" variant="safari-green">
                   Crear lista
                 </Button>
               </DialogFooter>

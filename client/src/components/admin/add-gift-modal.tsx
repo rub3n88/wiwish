@@ -326,7 +326,7 @@ export function AddGiftModal({
                       Imagen del regalo *
                     </FormLabel>
                     <div className="md:col-span-2 mb-4">
-                      <div className="border-2 border-dashed border-soft-gray-300 rounded-lg p-6 text-center hover:border-baby-blue-500 transition-colors cursor-pointer">
+                      <div className="border-2 border-dashed border-soft-gray-300 rounded-lg p-6 text-center hover:border-safari-green-500 transition-colors cursor-pointer">
                         <label
                           htmlFor="image-upload"
                           className="cursor-pointer w-full h-full block"
@@ -439,7 +439,7 @@ export function AddGiftModal({
               </Button>
               <Button
                 type="submit"
-                variant="baby-blue"
+                variant="safari-green"
                 disabled={isSubmitting}
                 className="px-4 py-2 rounded-md"
               >
