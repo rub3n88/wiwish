@@ -11,11 +11,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL}
       SESSION_SECRET: ${SESSION_SECRET}
-      EMAIL_HOST: ${EMAIL_HOST}
-      EMAIL_PORT: ${EMAIL_PORT}
-      EMAIL_SECURE: ${EMAIL_SECURE}
-      EMAIL_USER: ${EMAIL_USER}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      RESEND_API_KEY: ${RESEND_API_KEY}
       APP_URL: ${APP_URL}
     # restart: unless-stopped
     # networks:

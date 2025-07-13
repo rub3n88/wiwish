@@ -1,57 +1,38 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { Gift } from "../shared/schema.js";
 
-// Email configuration
-const emailConfig = {
-  host: process.env.EMAIL_HOST || "smtp.gmail.com",
-  port: parseInt(process.env.EMAIL_PORT || "587"),
-  secure: process.env.EMAIL_SECURE === "true",
-  auth: {
-    user: process.env.EMAIL_USER || "",
-    pass: process.env.EMAIL_PASSWORD || "",
-  },
-};
+// Resend configuration
+const resendApiKey = process.env.RESEND_API_KEY || "";
+const fromEmail = process.env.FROM_EMAIL || "contacto@rubenleon.es";
 
-// Log email configuration (without sensitive data)
-console.log("📧 Email Configuration:");
-console.log(`  - Host: ${emailConfig.host}`);
-console.log(`  - Port: ${emailConfig.port}`);
-console.log(`  - Secure: ${emailConfig.secure}`);
-console.log(
-  `  - User: ${emailConfig.auth.user ? emailConfig.auth.user : "❌ NOT SET"}`
-);
-console.log(`  - Password: ${emailConfig.auth.pass ? "✅ SET" : "❌ NOT SET"}`);
+// Log email configuration
+console.log("📧 Resend Email Configuration:");
+console.log(`  - API Key: ${resendApiKey ? "✅ SET" : "❌ NOT SET"}`);
+console.log(`  - From Email: ${fromEmail}`);
 console.log(`  - Environment: ${process.env.NODE_ENV || "development"}`);
 
-// Verify all required environment variables
-const requiredEnvVars = [
-  "EMAIL_HOST",
-  "EMAIL_PORT",
-  "EMAIL_USER",
-  "EMAIL_PASSWORD",
-];
+// Verify required environment variables
+const requiredEnvVars = ["RESEND_API_KEY"];
 const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
 
 if (missingVars.length > 0) {
   console.warn(
-    `⚠️  Missing email environment variables: ${missingVars.join(", ")}`
+    `⚠️  Missing Resend environment variables: ${missingVars.join(", ")}`
   );
 } else {
-  console.log("✅ All email environment variables are set");
+  console.log("✅ All Resend environment variables are set");
 }
 
-// Email sender setup
-const transporter = nodemailer.createTransport(emailConfig);
+// Initialize Resend
+const resend = new Resend(resendApiKey);
 
-// Test the connection on startup
-transporter.verify((error: any, success: any) => {
-  if (error) {
-    console.error("❌ Email transporter verification failed:", error.message);
-    console.error("   Full error:", error);
-  } else {
-    console.log("✅ Email transporter verified successfully");
-  }
-});
+// Test the API key on startup
+if (resendApiKey) {
+  console.log("🔍 Testing Resend API key...");
+  // Note: Resend doesn't have a direct verify method, but we'll test it on first send
+} else {
+  console.error("❌ Resend API key not provided - emails will fail");
+}
 
 // Get the base URL for links
 function getBaseUrl(): string {
@@ -72,7 +53,7 @@ export async function sendReservationEmail(
   registryBabyName: string,
   cancellationToken: string
 ): Promise<void> {
-  console.log(`📤 Attempting to send reservation email:`);
+  console.log(`📤 Attempting to send reservation email with Resend:`);
   console.log(`  - To: ${to}`);
   console.log(`  - Name: ${name}`);
   console.log(`  - Gift: ${gift.name}`);
@@ -92,8 +73,8 @@ export async function sendReservationEmail(
       <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center;">
           <img src="${gift.imageUrl}" alt="${
-    gift.name
-  }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
+            gift.name
+          }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
           <div>
             <h2 style="color: #333; font-size: 18px; margin: 0 0 5px 0;">${
               gift.name
@@ -117,7 +98,7 @@ export async function sendReservationEmail(
         <p style="color: #333; font-size: 16px;">Detalles de tu reserva:</p>
         <ul style="color: #666; padding-left: 20px;">
           <li>Nombre: ${name}</li>
-          <li>Email: ${to}
+          <li>Email: ${to}</li>
           <li>Fecha de reserva: ${new Date().toLocaleDateString()}</li>
         </ul>
       </div>
@@ -139,27 +120,32 @@ export async function sendReservationEmail(
     </div>
   `;
 
-  const mailOptions = {
-    from: `"Lista de Regalos" <${emailConfig.auth.user}>`,
-    to,
+  const emailData = {
+    from: `Lista de Regalos <${fromEmail}>`,
+    to: [to],
     subject: `Confirmación de reserva: ${gift.name} para ${registryBabyName}`,
     html: htmlContent,
   };
 
-  console.log(`📧 Mail options prepared:`);
-  console.log(`  - From: ${mailOptions.from}`);
-  console.log(`  - To: ${mailOptions.to}`);
-  console.log(`  - Subject: ${mailOptions.subject}`);
+  console.log(`📧 Resend email data prepared:`);
+  console.log(`  - From: ${emailData.from}`);
+  console.log(`  - To: ${emailData.to.join(", ")}`);
+  console.log(`  - Subject: ${emailData.subject}`);
 
   try {
-    const info = await transporter.sendMail(mailOptions);
+    const { data, error } = await resend.emails.send(emailData);
+
+    if (error) {
+      console.error("❌ Resend API error:", error);
+      throw new Error(`Resend API error: ${error.message}`);
+    }
+
     console.log(`✅ Reservation confirmation email sent successfully:`);
-    console.log(`  - Message ID: ${info.messageId}`);
-    console.log(`  - Response: ${info.response}`);
+    console.log(`  - Email ID: ${data?.id}`);
+    console.log(`  - Response data:`, data);
   } catch (error: any) {
     console.error("❌ Error sending reservation email:");
     console.error(`  - Error message: ${error.message}`);
-    console.error(`  - Error code: ${error.code}`);
     console.error(`  - Full error:`, error);
     throw new Error("Failed to send reservation confirmation email");
   }
@@ -171,7 +157,7 @@ export async function sendCancellationEmail(
   gift: Gift,
   registryBabyName: string
 ): Promise<void> {
-  console.log(`📤 Attempting to send cancellation email:`);
+  console.log(`📤 Attempting to send cancellation email with Resend:`);
   console.log(`  - To: ${to}`);
   console.log(`  - Gift: ${gift.name}`);
   console.log(`  - Registry: ${registryBabyName}`);
@@ -186,8 +172,8 @@ export async function sendCancellationEmail(
       <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
         <div style="display: flex; align-items: center;">
           <img src="${gift.imageUrl}" alt="${
-    gift.name
-  }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
+            gift.name
+          }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
           <div>
             <h2 style="color: #333; font-size: 18px; margin: 0 0 5px 0;">${
               gift.name
@@ -216,27 +202,32 @@ export async function sendCancellationEmail(
     </div>
   `;
 
-  const mailOptions = {
-    from: `"Lista de Regalos" <${emailConfig.auth.user}>`,
-    to,
+  const emailData = {
+    from: `Lista de Regalos <${fromEmail}>`,
+    to: [to],
     subject: `Reserva cancelada: ${gift.name} para ${registryBabyName}`,
     html: htmlContent,
   };
 
-  console.log(`📧 Mail options prepared:`);
-  console.log(`  - From: ${mailOptions.from}`);
-  console.log(`  - To: ${mailOptions.to}`);
-  console.log(`  - Subject: ${mailOptions.subject}`);
+  console.log(`📧 Resend email data prepared:`);
+  console.log(`  - From: ${emailData.from}`);
+  console.log(`  - To: ${emailData.to.join(", ")}`);
+  console.log(`  - Subject: ${emailData.subject}`);
 
   try {
-    const info = await transporter.sendMail(mailOptions);
+    const { data, error } = await resend.emails.send(emailData);
+
+    if (error) {
+      console.error("❌ Resend API error:", error);
+      throw new Error(`Resend API error: ${error.message}`);
+    }
+
     console.log(`✅ Cancellation confirmation email sent successfully:`);
-    console.log(`  - Message ID: ${info.messageId}`);
-    console.log(`  - Response: ${info.response}`);
+    console.log(`  - Email ID: ${data?.id}`);
+    console.log(`  - Response data:`, data);
   } catch (error: any) {
     console.error("❌ Error sending cancellation email:");
     console.error(`  - Error message: ${error.message}`);
-    console.error(`  - Error code: ${error.code}`);
     console.error(`  - Full error:`, error);
     throw new Error("Failed to send cancellation confirmation email");
   }
