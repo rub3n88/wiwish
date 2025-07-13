@@ -242,7 +242,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const gift = await storage.createGift({
         ...validatedData,
-        category: "General", // Categoría por defecto
         description: validatedData.description || "",
         url: validatedData.url || "",
         store: validatedData.store || "",
