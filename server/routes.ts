@@ -380,8 +380,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const registry = await storage.getRegistryById(gift.registryId);
 
       // Send confirmation email
+      console.log(`🎯 Preparing to send reservation confirmation email:`);
+      console.log(`  - Registry found: ${registry ? "✅ Yes" : "❌ No"}`);
+      console.log(
+        `  - Cancellation token: ${
+          updatedGift.cancellationToken ? "✅ Present" : "❌ Missing"
+        }`
+      );
+
       if (registry && updatedGift.cancellationToken) {
         try {
+          console.log(`📧 Calling sendReservationEmail function...`);
           await sendReservationEmail(
             validatedData.email,
             validatedData.name,
@@ -389,10 +398,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             registry.babyName,
             updatedGift.cancellationToken
           );
-        } catch (emailError) {
-          console.error("Error sending confirmation email:", emailError);
+          console.log(`✅ Reservation email process completed successfully`);
+        } catch (emailError: any) {
+          console.error("❌ Error sending confirmation email in route:");
+          console.error(`  - Error message: ${emailError.message}`);
+          console.error(`  - Full error:`, emailError);
           // Don't fail the request if email fails
         }
+      } else {
+        console.warn(`⚠️  Skipping email send due to missing requirements`);
       }
 
       return res.status(200).json(updatedGift);
@@ -429,17 +443,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const registry = await storage.getRegistryById(updatedGift.registryId);
 
       // Send cancellation confirmation email
+      console.log(`🎯 Preparing to send cancellation confirmation email:`);
+      console.log(`  - Registry found: ${registry ? "✅ Yes" : "❌ No"}`);
+      console.log(
+        `  - Gift with token found: ${giftWithToken ? "✅ Yes" : "❌ No"}`
+      );
+      console.log(
+        `  - Reserved by email: ${
+          giftWithToken?.reservedBy ? "✅ Present" : "❌ Missing"
+        }`
+      );
+
       if (registry && giftWithToken && giftWithToken.reservedBy) {
         try {
+          console.log(`📧 Calling sendCancellationEmail function...`);
           await sendCancellationEmail(
             giftWithToken.reservedBy,
             giftWithToken,
             registry.babyName
           );
-        } catch (emailError) {
-          console.error("Error sending cancellation email:", emailError);
+          console.log(`✅ Cancellation email process completed successfully`);
+        } catch (emailError: any) {
+          console.error("❌ Error sending cancellation email in route:");
+          console.error(`  - Error message: ${emailError.message}`);
+          console.error(`  - Full error:`, emailError);
           // Don't fail the request if email fails
         }
+      } else {
+        console.warn(
+          `⚠️  Skipping cancellation email send due to missing requirements`
+        );
       }
 
       return res.status(200).json({ success: true });

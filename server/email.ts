@@ -44,7 +44,7 @@ if (missingVars.length > 0) {
 const transporter = nodemailer.createTransport(emailConfig);
 
 // Test the connection on startup
-transporter.verify((error, success) => {
+transporter.verify((error: any, success: any) => {
   if (error) {
     console.error("❌ Email transporter verification failed:", error.message);
     console.error("   Full error:", error);
@@ -156,7 +156,7 @@ export async function sendReservationEmail(
     console.log(`✅ Reservation confirmation email sent successfully:`);
     console.log(`  - Message ID: ${info.messageId}`);
     console.log(`  - Response: ${info.response}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Error sending reservation email:");
     console.error(`  - Error message: ${error.message}`);
     console.error(`  - Error code: ${error.code}`);
@@ -233,7 +233,7 @@ export async function sendCancellationEmail(
     console.log(`✅ Cancellation confirmation email sent successfully:`);
     console.log(`  - Message ID: ${info.messageId}`);
     console.log(`  - Response: ${info.response}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Error sending cancellation email:");
     console.error(`  - Error message: ${error.message}`);
     console.error(`  - Error code: ${error.code}`);
