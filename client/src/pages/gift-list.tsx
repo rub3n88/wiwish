@@ -8,7 +8,7 @@ import { ReservationModal } from "@/components/reservation-modal";
 import { SuccessModal } from "@/components/success-modal";
 import { Footer } from "@/components/layout/footer";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Grid, List } from "lucide-react";
+import { Grid, List } from "lucide-react";
 import { Gift } from "@/types";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -36,7 +36,6 @@ export default function GiftList() {
   const [filter, setFilter] = useState({ query: "" });
   const [sortBy, setSortBy] = useState<"name" | "price">("name");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [visibleGifts, setVisibleGifts] = useState(12); // Number of initially visible gifts
 
   // Record a visit to the registry
   useEffect(() => {
@@ -137,9 +136,6 @@ export default function GiftList() {
   };
 
   // Handle load more gifts
-  const handleLoadMore = () => {
-    setVisibleGifts((prev) => prev + 12);
-  };
 
   // Show error if registry not found
   if (registryError || giftsError) {
@@ -251,7 +247,7 @@ export default function GiftList() {
                   : "space-y-4"
               }`}
             >
-              {availableGifts.slice(0, visibleGifts).map((gift: Gift) => (
+              {availableGifts.map((gift: Gift) => (
                 <GiftCard
                   key={gift.id}
                   gift={gift}
@@ -304,22 +300,6 @@ export default function GiftList() {
             <p className="text-soft-gray-600">
               No se encontraron regalos que coincidan con tu búsqueda.
             </p>
-          </div>
-        )}
-
-        {/* Load More Button - only for available gifts */}
-        {availableGifts.length > visibleGifts && (
-          <div className="text-center mb-8">
-            <Button
-              variant="outline"
-              className="bg-white border border-soft-gray-300 text-soft-gray-700 px-6 py-2 rounded-md hover:bg-soft-gray-100 transition"
-              onClick={handleLoadMore}
-            >
-              <span className="flex items-center justify-center">
-                <ChevronDown className="mr-2 h-4 w-4" />
-                Ver más regalos disponibles
-              </span>
-            </Button>
           </div>
         )}
       </main>
