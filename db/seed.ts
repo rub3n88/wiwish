@@ -26,7 +26,7 @@ async function seed() {
       // Create admin user
       const adminUser = await storage.createUser({
         username: "admin",
-        email: "admin@example.com",
+        email: "admin@example.com", // Opcional, pero lo incluimos para el admin
         password: await hashPassword("password123"),
       });
 

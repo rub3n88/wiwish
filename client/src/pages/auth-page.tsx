@@ -31,10 +31,7 @@ const registerSchema = z
     username: z
       .string()
       .min(3, "El nombre de usuario debe tener al menos 3 caracteres"),
-    email: z
-      .string()
-      .email("Debe ser un email válido")
-      .min(1, "El email es obligatorio"),
+    email: z.string().email("Debe ser un email válido").optional(),
     password: z
       .string()
       .min(6, "La contraseña debe tener al menos 6 caracteres"),
@@ -90,7 +87,11 @@ export default function AuthPage() {
   // Submit registration form
   function onRegisterSubmit(values: RegisterFormValues) {
     const { username, email, password } = values;
-    registerMutation.mutate({ username, email, password });
+    const userData: any = { username, password };
+    if (email && email.trim()) {
+      userData.email = email;
+    }
+    registerMutation.mutate(userData);
   }
 
   return (
@@ -205,10 +206,14 @@ export default function AuthPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-soft-gray-700 font-medium">
-                              Email
+                              Email (opcional)
                             </FormLabel>
                             <FormControl>
-                              <Input type="email" {...field} />
+                              <Input
+                                type="email"
+                                placeholder="correo@ejemplo.com"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

@@ -22,16 +22,20 @@ export const sessions = pgTable("session", {
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
+  email: text("email"), // Temporalmente opcional para migración segura
   password: text("password").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  email: true,
-  password: true,
-});
+export const insertUserSchema = createInsertSchema(users)
+  .pick({
+    username: true,
+    email: true,
+    password: true,
+  })
+  .extend({
+    email: z.string().email("Debe ser un email válido").optional(),
+  });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;

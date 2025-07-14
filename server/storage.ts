@@ -206,7 +206,7 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
     const user = await this.getUser(registry.userId);
-    return user.email;
+    return user.email || undefined; // Retorna undefined si no hay email
   }
 
   // Gift methods
