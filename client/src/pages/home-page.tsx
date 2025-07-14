@@ -42,6 +42,7 @@ export default function HomePage() {
               >
                 <Link href="/auth">Iniciar sesión</Link>
               </Button>
+              {/* Registro temporalmente desactivado
               <Button
                 variant="outline"
                 className="border-white text-white hover:bg-white hover:bg-opacity-20"
@@ -49,6 +50,7 @@ export default function HomePage() {
               >
                 <Link href="/auth">Crear una lista</Link>
               </Button>
+              */}
             </div>
           </div>
         </div>
@@ -137,7 +139,7 @@ export default function HomePage() {
               las personas que tienen el enlace directo.
             </p>
             <Button variant="safari-green" className="mx-auto" asChild>
-              <Link href="/auth">Crear mi lista de regalos</Link>
+              <Link href="/auth">Acceder al sistema</Link>
             </Button>
           </div>
         </div>

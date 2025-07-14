@@ -8,6 +8,13 @@
       "when": 1752434812200,
       "tag": "0000_solid_white_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1752434812201,
+      "tag": "0001_add_email_to_users",
+      "breakpoints": true
     }
   ]
 }

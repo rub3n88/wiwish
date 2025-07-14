@@ -2,7 +2,11 @@ import express, { type Express, type Request } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
 import { setupAuth } from "./auth.js";
-import { sendReservationEmail, sendCancellationEmail } from "./email.js";
+import {
+  sendReservationEmail,
+  sendCancellationEmail,
+  sendParentNotificationEmail,
+} from "./email.js";
 import { z } from "zod";
 import { db } from "../db/index.js";
 import { gifts } from "../shared/schema.js";
@@ -404,6 +408,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(`  - Error message: ${emailError.message}`);
           console.error(`  - Full error:`, emailError);
           // Don't fail the request if email fails
+        }
+
+        // Send notification to parents if there's a message
+        if (validatedData.message && validatedData.message.trim()) {
+          try {
+            console.log(`📧 Calling sendParentNotificationEmail function...`);
+            const parentEmail = await storage.getRegistryOwnerEmail(
+              gift.registryId
+            );
+            if (parentEmail) {
+              await sendParentNotificationEmail(
+                parentEmail,
+                validatedData.name,
+                validatedData.email,
+                updatedGift,
+                registry.babyName,
+                validatedData.message
+              );
+              console.log(
+                `✅ Parent notification email process completed successfully`
+              );
+            } else {
+              console.warn(
+                `⚠️  No parent email found for registry ${gift.registryId}`
+              );
+            }
+          } catch (emailError: any) {
+            console.error(
+              "❌ Error sending parent notification email in route:"
+            );
+            console.error(`  - Error message: ${emailError.message}`);
+            console.error(`  - Full error:`, emailError);
+            // Don't fail the request if email fails
+          }
+        } else {
+          console.log(`ℹ️  No message provided, skipping parent notification`);
         }
       } else {
         console.warn(`⚠️  Skipping email send due to missing requirements`);

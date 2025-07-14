@@ -31,6 +31,10 @@ const registerSchema = z
     username: z
       .string()
       .min(3, "El nombre de usuario debe tener al menos 3 caracteres"),
+    email: z
+      .string()
+      .email("Debe ser un email válido")
+      .min(1, "El email es obligatorio"),
     password: z
       .string()
       .min(6, "La contraseña debe tener al menos 6 caracteres"),
@@ -72,6 +76,7 @@ export default function AuthPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       username: "",
+      email: "",
       password: "",
       confirmPassword: "",
     },
@@ -84,8 +89,8 @@ export default function AuthPage() {
 
   // Submit registration form
   function onRegisterSubmit(values: RegisterFormValues) {
-    const { username, password } = values;
-    registerMutation.mutate({ username, password });
+    const { username, email, password } = values;
+    registerMutation.mutate({ username, email, password });
   }
 
   return (
@@ -114,9 +119,9 @@ export default function AuthPage() {
                 value={activeTab}
                 onValueChange={setActiveTab}
               >
-                <TabsList className="grid grid-cols-2 mb-6">
+                <TabsList className="grid grid-cols-1 mb-6">
                   <TabsTrigger value="login">Iniciar sesión</TabsTrigger>
-                  <TabsTrigger value="register">Registrarse</TabsTrigger>
+                  {/* <TabsTrigger value="register">Registrarse</TabsTrigger> */}
                 </TabsList>
 
                 <TabsContent value="login">
@@ -188,6 +193,22 @@ export default function AuthPage() {
                             </FormLabel>
                             <FormControl>
                               <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={registerForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-soft-gray-700 font-medium">
+                              Email
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="email" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

@@ -37,6 +37,7 @@ export interface IStorage {
   }): Promise<Registry>;
   updateRegistryVisitCount(id: number): Promise<void>;
   getPublicRegistries(): Promise<Registry[]>;
+  getRegistryOwnerEmail(registryId: number): Promise<string | undefined>;
 
   // Gift methods
   getGiftsByRegistryId(registryId: number): Promise<Gift[]>;
@@ -197,6 +198,15 @@ export class DatabaseStorage implements IStorage {
       where: eq(registries.isPublic, true),
       orderBy: desc(registries.createdAt),
     });
+  }
+
+  async getRegistryOwnerEmail(registryId: number): Promise<string | undefined> {
+    const registry = await this.getRegistryById(registryId);
+    if (!registry) {
+      return undefined;
+    }
+    const user = await this.getUser(registry.userId);
+    return user.email;
   }
 
   // Gift methods

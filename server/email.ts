@@ -251,3 +251,111 @@ export async function sendCancellationEmail(
     throw new Error("Failed to send cancellation confirmation email");
   }
 }
+
+// Send notification email to parents when someone reserves a gift with a message
+export async function sendParentNotificationEmail(
+  parentEmail: string,
+  reserverName: string,
+  reserverEmail: string,
+  gift: Gift,
+  registryBabyName: string,
+  message: string
+): Promise<void> {
+  console.log(`📤 Attempting to send parent notification email with Resend:`);
+  console.log(`  - To: ${parentEmail}`);
+  console.log(`  - Reserver: ${reserverName} (${reserverEmail})`);
+  console.log(`  - Gift: ${gift.name}`);
+  console.log(`  - Registry: ${registryBabyName}`);
+  console.log(`  - Message: ${message ? "✅ Present" : "❌ Missing"}`);
+
+  const absoluteImageUrl = getAbsoluteImageUrl(gift.imageUrl);
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: #339CFF; font-size: 24px; margin-bottom: 10px;">¡Alguien ha reservado un regalo!</h1>
+        <p style="color: #666; font-size: 16px;">Un regalo ha sido reservado para ${registryBabyName}</p>
+      </div>
+
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center;">
+          <img src="${absoluteImageUrl}" alt="${
+            gift.name
+          }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
+          <div>
+            <h2 style="color: #333; font-size: 18px; margin: 0 0 5px 0;">${
+              gift.name
+            }</h2>
+            <p style="color: #666; font-size: 14px; margin: 0 0 5px 0;">Precio: ${gift.price.toFixed(
+              2
+            )} €</p>
+            <p style="color: #666; font-size: 14px; margin: 0;">Tienda: ${
+              gift.store
+            }</p>
+            ${
+              gift.url
+                ? `<p style="margin-top: 8px;"><a href="${gift.url}" style="color: #339CFF; text-decoration: none;">Ver en tienda</a></p>`
+                : ""
+            }
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <p style="color: #333; font-size: 16px;">Detalles de la reserva:</p>
+        <ul style="color: #666; padding-left: 20px;">
+          <li>Reservado por: ${reserverName}</li>
+          <li>Email: ${reserverEmail}</li>
+          <li>Fecha de reserva: ${new Date().toLocaleDateString()}</li>
+        </ul>
+      </div>
+
+      ${
+        message
+          ? `
+      <div style="background-color: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #339CFF;">
+        <h3 style="color: #333; font-size: 16px; margin: 0 0 10px 0;">💌 Mensaje para vosotros:</h3>
+        <p style="color: #555; font-size: 14px; margin: 0; font-style: italic;">"${message}"</p>
+      </div>
+      `
+          : ""
+      }
+
+      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+        <p style="color: #999; font-size: 12px;">
+          Este correo electrónico ha sido enviado automáticamente. Puedes responder a ${reserverEmail} si quieres contactar con quien reservó el regalo.
+        </p>
+      </div>
+    </div>
+  `;
+
+  const emailData = {
+    from: `Lista de Regalos <${fromEmail}>`,
+    to: [parentEmail],
+    subject: `¡Regalo reservado! ${gift.name} para ${registryBabyName}`,
+    html: htmlContent,
+  };
+
+  console.log(`📧 Resend email data prepared:`);
+  console.log(`  - From: ${emailData.from}`);
+  console.log(`  - To: ${emailData.to.join(", ")}`);
+  console.log(`  - Subject: ${emailData.subject}`);
+
+  try {
+    const { data, error } = await resend.emails.send(emailData);
+
+    if (error) {
+      console.error("❌ Resend API error:", error);
+      throw new Error(`Resend API error: ${error.message}`);
+    }
+
+    console.log(`✅ Parent notification email sent successfully:`);
+    console.log(`  - Email ID: ${data?.id}`);
+    console.log(`  - Response data:`, data);
+  } catch (error: any) {
+    console.error("❌ Error sending parent notification email:");
+    console.error(`  - Error message: ${error.message}`);
+    console.error(`  - Full error:`, error);
+    throw new Error("Failed to send parent notification email");
+  }
+}
