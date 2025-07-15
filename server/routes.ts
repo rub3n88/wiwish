@@ -6,6 +6,7 @@ import {
   sendReservationEmail,
   sendCancellationEmail,
   sendParentNotificationEmail,
+  sendAdminCancellationEmail,
 } from "./email.js";
 import { z } from "zod";
 import { db } from "../db/index.js";
@@ -410,40 +411,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the request if email fails
         }
 
-        // Send notification to parents if there's a message
-        if (validatedData.message && validatedData.message.trim()) {
-          try {
-            console.log(`📧 Calling sendParentNotificationEmail function...`);
-            const parentEmail = await storage.getRegistryOwnerEmail(
-              gift.registryId
+        // Send notification to parents about the reservation
+        try {
+          console.log(`📧 Calling sendParentNotificationEmail function...`);
+          const parentEmail = await storage.getRegistryOwnerEmail(
+            gift.registryId
+          );
+          if (parentEmail) {
+            await sendParentNotificationEmail(
+              parentEmail,
+              validatedData.name,
+              validatedData.email,
+              updatedGift,
+              registry.babyName,
+              validatedData.message
             );
-            if (parentEmail) {
-              await sendParentNotificationEmail(
-                parentEmail,
-                validatedData.name,
-                validatedData.email,
-                updatedGift,
-                registry.babyName,
-                validatedData.message
-              );
-              console.log(
-                `✅ Parent notification email process completed successfully`
-              );
-            } else {
-              console.warn(
-                `⚠️  No parent email found for registry ${gift.registryId}`
-              );
-            }
-          } catch (emailError: any) {
-            console.error(
-              "❌ Error sending parent notification email in route:"
+            console.log(
+              `✅ Parent notification email process completed successfully`
             );
-            console.error(`  - Error message: ${emailError.message}`);
-            console.error(`  - Full error:`, emailError);
-            // Don't fail the request if email fails
+          } else {
+            console.warn(
+              `⚠️  No parent email found for registry ${gift.registryId}`
+            );
           }
-        } else {
-          console.log(`ℹ️  No message provided, skipping parent notification`);
+        } catch (emailError: any) {
+          console.error("❌ Error sending parent notification email in route:");
+          console.error(`  - Error message: ${emailError.message}`);
+          console.error(`  - Full error:`, emailError);
+          // Don't fail the request if email fails
         }
       } else {
         console.warn(`⚠️  Skipping email send due to missing requirements`);
@@ -505,6 +500,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`✅ Cancellation email process completed successfully`);
         } catch (emailError: any) {
           console.error("❌ Error sending cancellation email in route:");
+          console.error(`  - Error message: ${emailError.message}`);
+          console.error(`  - Full error:`, emailError);
+          // Don't fail the request if email fails
+        }
+
+        // Send notification to admin about the cancellation
+        try {
+          console.log(`📧 Calling sendAdminCancellationEmail function...`);
+          const adminEmail = await storage.getRegistryOwnerEmail(
+            updatedGift.registryId
+          );
+          if (adminEmail) {
+            await sendAdminCancellationEmail(
+              adminEmail,
+              giftWithToken.reservedByName || "Usuario",
+              giftWithToken.reservedBy,
+              updatedGift,
+              registry.babyName
+            );
+            console.log(
+              `✅ Admin cancellation notification email process completed successfully`
+            );
+          } else {
+            console.warn(
+              `⚠️  No admin email found for registry ${updatedGift.registryId}`
+            );
+          }
+        } catch (emailError: any) {
+          console.error(
+            "❌ Error sending admin cancellation notification email in route:"
+          );
           console.error(`  - Error message: ${emailError.message}`);
           console.error(`  - Full error:`, emailError);
           // Don't fail the request if email fails

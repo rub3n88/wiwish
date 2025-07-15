@@ -252,14 +252,14 @@ export async function sendCancellationEmail(
   }
 }
 
-// Send notification email to parents when someone reserves a gift with a message
+// Send notification email to parents when someone reserves a gift
 export async function sendParentNotificationEmail(
   parentEmail: string,
   reserverName: string,
   reserverEmail: string,
   gift: Gift,
   registryBabyName: string,
-  message: string
+  message: string | null = null
 ): Promise<void> {
   console.log(`📤 Attempting to send parent notification email with Resend:`);
   console.log(`  - To: ${parentEmail}`);
@@ -311,7 +311,7 @@ export async function sendParentNotificationEmail(
       </div>
 
       ${
-        message
+        message && message.trim()
           ? `
       <div style="background-color: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #339CFF;">
         <h3 style="color: #333; font-size: 16px; margin: 0 0 10px 0;">💌 Mensaje para vosotros:</h3>
@@ -357,5 +357,108 @@ export async function sendParentNotificationEmail(
     console.error(`  - Error message: ${error.message}`);
     console.error(`  - Full error:`, error);
     throw new Error("Failed to send parent notification email");
+  }
+}
+
+// Send notification email to admin when someone cancels a gift reservation
+export async function sendAdminCancellationEmail(
+  adminEmail: string,
+  cancellerName: string,
+  cancellerEmail: string,
+  gift: Gift,
+  registryBabyName: string
+): Promise<void> {
+  console.log(
+    `📤 Attempting to send admin cancellation notification email with Resend:`
+  );
+  console.log(`  - To: ${adminEmail}`);
+  console.log(`  - Canceller: ${cancellerName} (${cancellerEmail})`);
+  console.log(`  - Gift: ${gift.name}`);
+  console.log(`  - Registry: ${registryBabyName}`);
+
+  const absoluteImageUrl = getAbsoluteImageUrl(gift.imageUrl);
+
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: #FF6B6B; font-size: 24px; margin-bottom: 10px;">🚫 Reserva cancelada</h1>
+        <p style="color: #666; font-size: 16px;">Alguien ha cancelado la reserva de un regalo para ${registryBabyName}</p>
+      </div>
+
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center;">
+          <img src="${absoluteImageUrl}" alt="${
+            gift.name
+          }" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; margin-right: 15px;" />
+          <div>
+            <h2 style="color: #333; font-size: 18px; margin: 0 0 5px 0;">${
+              gift.name
+            }</h2>
+            <p style="color: #666; font-size: 14px; margin: 0 0 5px 0;">Precio: ${gift.price.toFixed(
+              2
+            )} €</p>
+            <p style="color: #666; font-size: 14px; margin: 0;">Tienda: ${
+              gift.store
+            }</p>
+            ${
+              gift.url
+                ? `<p style="margin-top: 8px;"><a href="${gift.url}" style="color: #339CFF; text-decoration: none;">Ver en tienda</a></p>`
+                : ""
+            }
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <p style="color: #333; font-size: 16px;">Detalles de la cancelación:</p>
+        <ul style="color: #666; padding-left: 20px;">
+          <li>Cancelado por: ${cancellerName}</li>
+          <li>Email: ${cancellerEmail}</li>
+          <li>Fecha de cancelación: ${new Date().toLocaleDateString()}</li>
+        </ul>
+      </div>
+
+      <div style="background-color: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #FF6B6B;">
+        <p style="color: #333; font-size: 14px; margin: 0;">
+          ℹ️ <strong>Estado del regalo:</strong> El regalo ahora está disponible para que alguien más lo reserve.
+        </p>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+        <p style="color: #999; font-size: 12px;">
+          Este correo electrónico ha sido enviado automáticamente. Puedes responder a ${cancellerEmail} si quieres contactar con quien canceló la reserva.
+        </p>
+      </div>
+    </div>
+  `;
+
+  const emailData = {
+    from: `Lista de Regalos <${fromEmail}>`,
+    to: [adminEmail],
+    subject: `🚫 Reserva cancelada: ${gift.name} para ${registryBabyName}`,
+    html: htmlContent,
+  };
+
+  console.log(`📧 Resend email data prepared:`);
+  console.log(`  - From: ${emailData.from}`);
+  console.log(`  - To: ${emailData.to.join(", ")}`);
+  console.log(`  - Subject: ${emailData.subject}`);
+
+  try {
+    const { data, error } = await resend.emails.send(emailData);
+
+    if (error) {
+      console.error("❌ Resend API error:", error);
+      throw new Error(`Resend API error: ${error.message}`);
+    }
+
+    console.log(`✅ Admin cancellation notification email sent successfully:`);
+    console.log(`  - Email ID: ${data?.id}`);
+    console.log(`  - Response data:`, data);
+  } catch (error: any) {
+    console.error("❌ Error sending admin cancellation notification email:");
+    console.error(`  - Error message: ${error.message}`);
+    console.error(`  - Full error:`, error);
+    throw new Error("Failed to send admin cancellation notification email");
   }
 }
